@@ -1,0 +1,148 @@
+@model HairCareShop.Core.Entities.Product
+
+@{
+    ViewData["Title"] = "Cập nhật sản phẩm";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="text-primary fw-bold m-0"><i class="bi bi-pencil-square me-2"></i>Cập nhật Sản Phẩm</h3>
+            <p class="text-muted small m-0">Chỉnh sửa thông tin chi tiết</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+        </a>
+    </div>
+
+    <form asp-action="Edit" enctype="multipart/form-data">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ImageUrl" />
+
+        <div class="row g-4">
+
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white py-3 fw-bold text-primary">
+                        <i class="bi bi-info-circle me-1"></i> Thông tin chung
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-bold">Tên sản phẩm <span
+                                    class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control form-control-lg" required />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CategoryId" class="form-label fw-bold">Danh mục</label>
+                                <select asp-for="CategoryId" class="form-select"
+                                    asp-items="ViewBag.Categories"></select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Brand" class="form-label fw-bold">Thương hiệu</label>
+                                <input asp-for="Brand" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">Mô tả chi tiết</label>
+                            <textarea asp-for="Description" class="form-control" rows="6"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 fw-bold text-primary">
+                        <i class="bi bi-tag me-1"></i> Giá & Quy cách
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Price" class="form-label fw-bold">Giá bán lẻ (VNĐ)</label>
+                            <div class="input-group">
+                                <input asp-for="Price" type="number" class="form-control fw-bold text-success fs-5"
+                                    required />
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="UnitName" class="form-label fw-bold">Đơn vị tính lẻ</label>
+                            <select asp-for="UnitName" class="form-select">
+                                <option value="Chai">Chai</option>
+                                <option value="Gói">Gói</option>
+                                <option value="Hộp">Hộp</option>
+                                <option value="Lọ">Lọ</option>
+                                <option value="Tuýp">Tuýp</option>
+                                <option value="Cái">Cái</option>
+                                <option value="Bộ">Bộ</option>
+                                <option value="Combo">Combo</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="UnitsPerBox" class="form-label fw-bold">Quy cách đóng thùng</label>
+                            <div class="input-group">
+                                <input asp-for="UnitsPerBox" type="number" class="form-control" min="1" />
+                                <span class="input-group-text bg-light">lẻ / thùng</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="StockQuantity" class="form-label fw-bold">Tồn kho hiện tại</label>
+                            <input asp-for="StockQuantity" type="number" class="form-control bg-light" readonly />
+                            <small class="text-muted fst-italic"><i class="bi bi-info-circle"></i> Tồn kho chỉ được cập
+                                nhật qua chức năng Nhập kho.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3 fw-bold text-primary">
+                        <i class="bi bi-image me-1"></i> Hình ảnh
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3 position-relative bg-light rounded p-2">
+                            <img id="imgPreview"
+                                src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "https://via.placeholder.com/300x300?text=No+Image" : Model.ImageUrl)"
+                                class="img-fluid rounded" style="max-height: 250px; object-fit: contain;"
+                                alt="Ảnh sản phẩm" />
+                        </div>
+
+                        <label class="btn btn-outline-primary w-100">
+                            <i class="bi bi-cloud-upload me-1"></i> Đổi hình ảnh
+                            <input type="file" name="imageFile" class="d-none" accept="image/*"
+                                onchange="previewImage(this)" />
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary w-100 btn-lg fw-bold shadow py-3">
+                        <i class="bi bi-check2-circle me-1"></i> LƯU THAY ĐỔI
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('imgPreview').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

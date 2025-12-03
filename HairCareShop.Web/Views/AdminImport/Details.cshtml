@@ -1,0 +1,170 @@
+@model HairCareShop.Core.Entities.ImportNote
+
+@{
+    ViewData["Title"] = "Chi tiết phiếu #" + Model.Id;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+        <div>
+            <button onclick="window.print()" class="btn btn-primary me-2">
+                <i class="bi bi-printer-fill"></i> In Phiếu
+            </button>
+            <a asp-action="Create" class="btn btn-success">
+                <i class="bi bi-plus-lg"></i> Nhập tiếp
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0" id="printArea">
+        <div class="card-body p-5">
+
+            <div class="row border-bottom pb-4 mb-4">
+                <div class="col-6">
+                    <h2 class="fw-bold text-uppercase text-primary m-0">Phiếu Nhập Kho</h2>
+                    <p class="text-muted mb-0">Hệ thống quản lý HairCare Shop</p>
+                </div>
+                <div class="col-6 text-end">
+                    <h4 class="fw-bold text-dark">Mã phiếu: #@Model.Id</h4>
+                    <div class="text-muted">Ngày nhập: @Model.ImportDate.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-6">
+                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Nhà cung cấp</h6>
+                    <h5 class="fw-bold text-dark mb-1">@Model.Supplier?.Name</h5>
+                    <div class="text-muted small"><i class="bi bi-geo-alt"></i> @(Model.Supplier?.Address ?? "Chưa cập                        nhật")</div>
+                    <div class="text-muted small"><i class="bi bi-telephone"></i> @(Model.Supplier?.PhoneNumber ??
+                                                "---")</div>
+                </div>
+                <div class="col-6 text-end">
+                    <h6 class="text-uppercase text-muted fw-bold small mb-2">Ghi chú phiếu nhập</h6>
+                    <div class="p-3 bg-light rounded d-inline-block text-start" style="min-width: 250px;">
+                        <span class="fst-italic text-dark">
+                            @(string.IsNullOrEmpty(Model.Note) ? "Không có ghi chú." : Model.Note)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered border-light align-middle">
+                    <thead class="bg-primary text-white text-center">
+                        <tr>
+                            <th style="width: 50px;">STT</th>
+                            <th class="text-start">Tên hàng hóa</th>
+                            <th style="width: 200px;">Thông tin Lô / Date</th>
+                            <th>SL Thùng</th>
+                            <th>Quy cách</th>
+                            <th>Tổng lẻ</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-center">
+                        @if (Model.Details != null && Model.Details.Any())
+                        {
+                            int stt = 1;
+                            foreach (var item in Model.Details)
+                            {
+                                var lineTotal = item.TotalQuantity * item.ImportPrice;
+                                <tr>
+                                    <td>@(stt++)</td>
+                                    <td class="text-start">
+                                        <span class="fw-bold text-dark">@item.Product?.Name</span>
+                                    </td>
+                                    <td class="text-start">
+                                        <div class="small fw-bold text-primary">Lô: @item.BatchCode</div>
+                                        <div class="small text-muted">NSX: @item.ManufacturingDate.ToString("dd/MM/yyyy")</div>
+                                        <div class="small text-danger">HSD: @item.ExpiryDate.ToString("dd/MM/yyyy")</div>
+                                    </td>
+                                    <td>@item.BoxQuantity</td>
+                                    <td class="text-muted">@item.UnitsPerBox @(item.Product?.UnitName)/thùng</td>
+                                    <td class="fw-bold">@item.TotalQuantity @item.Product?.UnitName</td>
+                                    <td class="text-end text-muted">@item.ImportPrice.ToString("N0")</td>
+                                    <td class="text-end fw-bold text-dark">@lineTotal.ToString("N0")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row">
+                <div class="col-7">
+                    <p class="text-muted small fst-italic mt-2">
+                        * Chứng từ này được in từ hệ thống và có giá trị xác nhận nhập kho.
+                    </p>
+                </div>
+                <div class="col-5">
+                    <div class="bg-light p-3 rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-uppercase">Tổng thanh toán:</span>
+                            <span class="fs-4 fw-bold text-danger">@Model.TotalAmount.ToString("N0") VNĐ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-5 pt-4 text-center">
+                <div class="col-4">
+                    <strong>Người lập phiếu</strong>
+                    <div style="height: 80px;"></div>
+                    <small>(Ký, họ tên)</small>
+                </div>
+                <div class="col-4">
+                    <strong>Thủ kho</strong>
+                    <div style="height: 80px;"></div>
+                    <small>(Ký, họ tên)</small>
+                </div>
+                <div class="col-4">
+                    <strong>Nhà cung cấp</strong>
+                    <div style="height: 80px;"></div>
+                    <small>(Ký, họ tên)</small>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #printArea,
+        #printArea * {
+            visibility: visible;
+        }
+
+        #printArea {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .d-print-none {
+            display: none !important;
+        }
+
+        .bg-light {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .bg-primary {
+            background-color: #0d6efd !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+        }
+    }
+</style>

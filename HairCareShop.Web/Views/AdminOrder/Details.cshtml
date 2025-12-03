@@ -1,0 +1,79 @@
+@model HairCareShop.Core.Entities.Order
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-white fw-bold">Chi tiết sản phẩm</div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Giá</th>
+                                <th>SL</th>
+                                <th>Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detail in Model.OrderDetails)
+                            {
+                                <tr>
+                                    <td>@detail.Product?.Name</td>
+                                    <td>@detail.UnitPrice.ToString("N0")</td>
+                                    <td>@detail.Quantity</td>
+                                    <td>@((detail.UnitPrice * detail.Quantity).ToString("N0"))</td>
+                                </tr>
+
+                            }
+                        </tbody>
+                    </table>
+                    <h4 class="text-end text-danger mt-3">Tổng cộng: @Model.TotalAmount.ToString("N0") đ</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Xử lý đơn hàng #@Model.Id</div>
+                <div class="card-body">
+                    <p><strong>Khách hàng:</strong> @Model.User?.FullName</p>
+                    <p><strong>Địa chỉ:</strong> @Model.ShippingAddress</p>
+                    <hr>
+
+                    <form asp-action="UpdateStatus" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Trạng thái:</label>
+                            <select name="status" class="form-select">
+                                <option value="Pending" selected="@(Model.Status == "Pending")">Chờ xử lý</option>
+                                <option value="Processing" selected="@(Model.Status == "Processing")">Đang đóng gói
+                                </option>
+                                <option value="Shipping" selected="@(Model.Status == "Shipping")">Đang giao hàng
+                                </option>
+                                <option value="Delivered" selected="@(Model.Status == "Delivered")">Đã giao thành công
+                                </option>
+                                <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Hủy đơn</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Gán Shipper:</label>
+                            <select name="shipperId" class="form-select">
+                                <option value="">-- Chọn Shipper --</option>
+                                @foreach (var shipper in ViewBag.Shippers)
+                                {
+                                    <option value="@shipper.Id" selected="@(Model.ShipperId == shipper.Id)">
+                                        @shipper.FullName</option>
+                                }
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">Cập nhật đơn hàng</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

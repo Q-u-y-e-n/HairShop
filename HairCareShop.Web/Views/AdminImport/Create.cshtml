@@ -1,0 +1,303 @@
+@model HairCareShop.Web.Models.ImportNoteViewModel
+
+@{
+    ViewData["Title"] = "Tạo Phiếu Nhập Kho";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="text-primary fw-bold m-0"><i class="bi bi-box-arrow-in-down-right me-2"></i>Nhập Kho & Mua Hàng
+            </h3>
+        </div>
+        <div>
+            <a asp-controller="AdminProduct" asp-action="Index" class="btn btn-outline-secondary shadow-sm me-2">
+                <i class="bi bi-arrow-left me-1"></i> Về DS Sản phẩm
+            </a>
+            <a asp-action="Index" class="btn btn-outline-info shadow-sm">
+                <i class="bi bi-clock-history me-1"></i> Lịch sử Nhập
+            </a>
+        </div>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger shadow-sm" asp-validation-summary="All"></div>
+    }
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger shadow-sm">@ViewBag.Error</div>
+    }
+
+    <form asp-action="Create" method="post" id="importForm">
+        <div class="row g-4">
+            <div class="col-lg-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white fw-bold">Thông tin Phiếu</div>
+                    <div class="card-body bg-light">
+                        <div class="mb-3">
+                            <label class="fw-bold">Nhà cung cấp (*)</label>
+                            <select asp-for="SupplierId" class="form-select border-primary"
+                                asp-items="ViewBag.Suppliers" required>
+                                <option value="">-- Chọn NCC --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3"><label class="fw-bold">Ghi chú</label><textarea asp-for="Note"
+                                class="form-control" rows="5"></textarea></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-9">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 fw-bold text-primary">Thêm hàng hóa</div>
+                    <div class="card-body bg-white">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-5">
+                                <label class="small fw-bold">Sản phẩm</label>
+                                <div class="input-group">
+                                    <select id="inputProduct" class="form-select" onchange="onProductChange()"></select>
+                                    <button class="btn btn-success" type="button" data-bs-toggle="modal"
+                                        data-bs-target="#quickCreateModal"><i class="bi bi-plus-lg"></i> Mới</button>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6"><label class="small fw-bold">Quy cách</label>
+                                <div class="input-group input-group-sm"><input type="text" id="inputUnitPerBox"
+                                        class="form-control bg-light text-center" readonly value="1" /><span
+                                        class="input-group-text bg-light text-muted" id="unitLabel">lẻ/thùng</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6"><label class="small fw-bold">Giá nhập</label><input
+                                    type="number" id="inputPrice" class="form-control fw-bold text-success" /></div>
+                            <div class="col-md-3 col-6"><label class="small fw-bold">Mã Lô</label><input type="text"
+                                    id="inputBatch" class="form-control" placeholder="Auto..." /></div>
+                            <div class="col-md-3 col-6"><label class="small fw-bold">Ngày SX</label><input type="date"
+                                    id="inputMfgDate" class="form-control" /></div>
+                            <div class="col-md-3 col-6"><label class="small fw-bold">Hạn dùng</label><input type="date"
+                                    id="inputExpDate" class="form-control" /></div>
+                            <div class="col-md-3"><label class="fw-bold text-primary">SL Thùng</label><input
+                                    type="number" id="inputBoxQty"
+                                    class="form-control border-primary fw-bold text-primary" oninput="calcPreview()" />
+                            </div>
+                            <div class="col-md-12">
+                                <div
+                                    class="d-flex justify-content-between align-items-center p-2 bg-light rounded border border-warning-subtle">
+                                    <div class="d-flex align-items-center text-warning-emphasis"><span>Tổng
+                                            thực:</span><strong id="previewTotal"
+                                            class="fs-4 text-danger mx-2">0</strong><span id="previewUnit"
+                                            class="fw-bold">Đơn vị</span></div>
+                                    <button type="button" class="btn btn-primary fw-bold px-4"
+                                        onclick="addItemToList()">Thêm dòng</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-center">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Tên hàng</th>
+                                    <th>Lô/Date</th>
+                                    <th>SL Nhập</th>
+                                    <th>Giá</th>
+                                    <th>Thành tiền</th>
+                                    <th>#</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importListBody">
+                                <tr id="emptyRow">
+                                    <td colspan="6" class="text-muted py-5">Chưa có dữ liệu</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="4" class="text-end fw-bold">TỔNG TIỀN:</td>
+                                    <td colspan="2" class="text-start text-danger fw-bold fs-5"><span
+                                            id="grandTotal">0</span> đ</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="mt-4 text-end"><button type="submit" class="btn btn-success btn-lg px-5 fw-bold shadow">LƯU
+                        PHIẾU NHẬP</button></div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="quickCreateModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold">Thêm nhanh sản phẩm</h5><button type="button"
+                    class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickCreateForm">
+                    <div class="mb-3"><label class="fw-bold">Tên sản phẩm (*)</label><input type="text" id="new_Name"
+                            class="form-control" required /></div>
+                    <div class="row">
+                        <div class="col-6 mb-3"><label class="fw-bold">Danh mục</label><select id="new_CategoryId"
+                                class="form-select" asp-items="ViewBag.Categories"></select></div>
+                        <div class="col-6 mb-3"><label class="fw-bold">Giá bán</label><input type="number"
+                                id="new_Price" class="form-control" /></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Hình ảnh</label>
+                        <input type="file" id="new_ImageFile" class="form-control" accept="image/*" />
+                        <small class="text-muted">.jpg, .png</small>
+                    </div>
+
+                    <div class="row p-3 bg-light rounded mx-1 border">
+                        <div class="col-6 mb-3"><label class="fw-bold text-primary">Quy cách (*)</label><input
+                                type="number" id="new_UnitsPerBox" class="form-control border-primary fw-bold"
+                                value="1" /></div>
+                        <div class="col-6 mb-3"><label class="fw-bold">Đơn vị (*)</label>
+                            <select id="new_UnitName" class="form-select">
+                                <option value="Chai">Chai</option>
+                                <option value="Gói">Gói</option>
+                                <option value="Hộp">Hộp</option>
+                                <option value="Lọ">Lọ</option>
+                                <option value="Tuýp">Tuýp</option>
+                                <option value="Cái">Cái</option>
+                                <option value="Bộ">Bộ</option>
+                                <option value="Combo">Combo</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light"><button type="button" class="btn btn-secondary"
+                    data-bs-dismiss="modal">Đóng</button><button type="button" class="btn btn-success fw-bold px-4"
+                    onclick="submitQuickCreate()">Lưu</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var productsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((object)ViewBag.ProductsData));
+    let rowIndex = 0, currentGrandTotal = 0;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        renderProductDropdown();
+        document.getElementById('inputMfgDate').valueAsDate = new Date();
+        document.getElementById('inputExpDate').valueAsDate = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+        document.getElementById('importForm').addEventListener('submit', function (e) {
+            let rows = document.querySelectorAll('#importListBody tr');
+            let hasData = false;
+            rows.forEach(r => { if (r.id !== 'emptyRow') hasData = true; });
+            if (!hasData) { e.preventDefault(); alert("Vui lòng thêm sản phẩm!"); return; }
+            reIndexTable();
+        });
+    });
+
+    function renderProductDropdown(selId = null) {
+        let sel = document.getElementById('inputProduct'); sel.innerHTML = '<option value="">-- Chọn SP --</option>';
+        productsData.forEach(p => {
+            let opt = document.createElement("option");
+            opt.value = p.Id; opt.text = p.Name;
+            opt.setAttribute('data-unit', p.UnitsPerBox); opt.setAttribute('data-name', p.UnitName); opt.setAttribute('data-price', p.Price);
+            if (selId && p.Id == selId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        if (selId) onProductChange();
+    }
+
+    function onProductChange() {
+        let opt = document.getElementById('inputProduct').selectedOptions[0];
+        if (opt.value) {
+            document.getElementById('inputUnitPerBox').value = opt.getAttribute('data-unit') || 1;
+            document.getElementById('unitLabel').innerText = (opt.getAttribute('data-name') || 'Đơn vị') + '/thùng';
+            document.getElementById('previewUnit').innerText = opt.getAttribute('data-name') || 'Đơn vị';
+            if (!document.getElementById('inputPrice').value) document.getElementById('inputPrice').value = opt.getAttribute('data-price');
+        }
+        calcPreview();
+    }
+
+    function calcPreview() {
+        let box = parseInt(document.getElementById('inputBoxQty').value) || 0;
+        let perBox = parseInt(document.getElementById('inputUnitPerBox').value) || 1;
+        document.getElementById('previewTotal').innerText = box * perBox;
+    }
+
+    function addItemToList() {
+        let id = document.getElementById('inputProduct').value;
+        let name = document.getElementById('inputProduct').selectedOptions[0].text;
+        let box = parseInt(document.getElementById('inputBoxQty').value) || 0;
+        let unit = parseInt(document.getElementById('inputUnitPerBox').value) || 1;
+        let price = parseFloat(document.getElementById('inputPrice').value) || 0;
+        let batch = document.getElementById('inputBatch').value || 'L' + new Date().toISOString().slice(2, 10).replace(/-/g, '');
+        let mfg = document.getElementById('inputMfgDate').value; let exp = document.getElementById('inputExpDate').value;
+
+        if (!id || box <= 0 || !exp) { alert("Nhập đủ thông tin!"); return; }
+
+        let totalQty = box * unit; let lineTotal = totalQty * price;
+        document.getElementById('emptyRow')?.remove();
+
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td class="text-start fw-bold text-primary">${name} <input type="hidden" name="Details[${rowIndex}].ProductId" value="${id}" /><input type="hidden" name="Details[${rowIndex}].UnitsPerBox" value="${unit}" /></td>
+            <td class="text-start"><small>Lô: <b>${batch}</b></small><br><small class="text-muted">HSD: ${exp}</small>
+            <input type="hidden" name="Details[${rowIndex}].BatchCode" value="${batch}" /><input type="hidden" name="Details[${rowIndex}].ManufacturingDate" value="${mfg}" /><input type="hidden" name="Details[${rowIndex}].ExpiryDate" value="${exp}" /></td>
+            <td>${box} Thùng <input type="hidden" name="Details[${rowIndex}].BoxQuantity" value="${box}" /></td>
+            <td>${price.toLocaleString()} <input type="hidden" name="Details[${rowIndex}].ImportPrice" value="${price}" /></td>
+            <td class="fw-bold text-success">${lineTotal.toLocaleString()}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this, ${lineTotal})">X</button></td>`;
+
+        document.getElementById('importListBody').appendChild(tr);
+        currentGrandTotal += lineTotal;
+        document.getElementById('grandTotal').innerText = currentGrandTotal.toLocaleString();
+        rowIndex++;
+        document.getElementById('inputBoxQty').value = '';
+        calcPreview();
+    }
+
+    function removeRow(btn, amount) {
+        btn.closest('tr').remove();
+        currentGrandTotal -= amount;
+        document.getElementById('grandTotal').innerText = currentGrandTotal.toLocaleString();
+    }
+
+    function reIndexTable() {
+        document.querySelectorAll('#importListBody tr').forEach((row, index) => {
+            row.querySelectorAll('input').forEach(input => {
+                if (input.name.includes('Details[')) input.name = input.name.replace(/Details\[\d+\]/, `Details[${index}]`);
+            });
+        });
+    }
+
+    // --- SCRIPT QUAN TRỌNG ĐỂ GỬI ẢNH ---
+    function submitQuickCreate() {
+        let fd = new FormData();
+        let name = document.getElementById('new_Name').value;
+        let img = document.getElementById('new_ImageFile');
+
+        if (!name) { alert('Nhập tên SP!'); return; }
+
+        fd.append('Name', name);
+        fd.append('CategoryId', document.getElementById('new_CategoryId').value);
+        let sellingPrice = document.getElementById('new_Price').value || 0;
+        fd.append('Price', sellingPrice);
+        fd.append('UnitName', document.getElementById('new_UnitName').value);
+        fd.append('UnitsPerBox', document.getElementById('new_UnitsPerBox').value);
+
+        // APPEND FILE ẢNH
+        if (img.files.length > 0) fd.append('ImageFile', img.files[0]);
+
+        fetch('/AdminImport/QuickCreateProduct', { method: 'POST', body: fd })
+            .then(r => r.json()).then(d => {
+                if (d.success) {
+                    productsData.push({ Id: d.data.id, Name: d.data.name, UnitsPerBox: d.data.unitsPerBox, UnitName: d.data.unitName, Price: sellingPrice });
+                    renderProductDropdown(d.data.id);
+                    document.getElementById('inputPrice').value = sellingPrice;
+                    bootstrap.Modal.getInstance(document.getElementById('quickCreateModal')).hide();
+                    document.getElementById('quickCreateForm').reset();
+                    document.getElementById('new_ImageFile').value = ""; // Reset input file
+                } else alert(d.message);
+            });
+    }
+</script>

@@ -1,0 +1,130 @@
+@model IEnumerable<HairCareShop.Core.Entities.Product>
+
+@{
+    ViewData["Title"] = "Quản lý Sản phẩm";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="text-primary fw-bold m-0"><i class="bi bi-box-seam me-2"></i>Quản lý Sản phẩm</h3>
+            <p class="text-muted small m-0">Danh sách sản phẩm và tồn kho hiện tại</p>
+        </div>
+        <div>
+            <a asp-controller="AdminImport" asp-action="Create" class="btn btn-success shadow-sm fw-bold px-3 py-2">
+                <i class="bi bi-box-arrow-in-down-right me-1 fs-5"></i> Nhập Kho / Mua Hàng
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <form asp-action="Index" method="get" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i
+                                class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="searchString" class="form-control border-start-0 ps-0"
+                            placeholder="Tìm theo tên, thương hiệu..." value="@ViewData["CurrentFilter"]">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Tìm kiếm</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th style="width: 70px;" class="text-center">Ảnh</th>
+                        <th>Thông tin sản phẩm</th>
+                        <th>Giá bán lẻ</th>
+                        <th>Tồn kho hiện tại</th>
+                        <th>Hạn dùng (Gần nhất)</th>
+                        <th class="text-center" style="width: 120px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var nearestBatch = item.ProductBatches?.OrderBy(b => b.ExpiryDate).FirstOrDefault(b => b.Quantity >
+                        0);
+
+                        <tr>
+                            <td class="text-center">
+                                <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/60" : item.ImageUrl)"
+                                    class="rounded border" width="60" height="60" style="object-fit: cover;" />
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark mb-1">@item.Name</div>
+                                <span class="badge bg-light text-dark border me-1">@item.Category?.Name</span>
+                                <small class="text-muted">@item.Brand</small>
+                            </td>
+                            <td class="fw-bold text-success">
+                                @item.Price.ToString("N0") đ
+                            </td>
+
+                            <td>
+                                @if (item.StockQuantity > 0)
+                                {
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        <div>
+                                            <span class="fw-bold text-dark">@item.StockQuantity.ToString("N0")</span>
+                                            <small class="text-muted">@item.UnitName</small>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Hết
+                                        hàng</span>
+                                }
+                            </td>
+
+                            <td>
+                                @if (nearestBatch != null)
+                                {
+                                    var daysLeft = (nearestBatch.ExpiryDate - DateTime.Now).TotalDays;
+                                    var textColor = daysLeft < 30 ? "text-danger fw-bold" : (daysLeft < 90 ? "text-warning fw-bold" : "text-dark");
+
+                                    <div class="@textColor">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        @nearestBatch.ExpiryDate.ToString("dd/MM/yyyy")
+                                    </div>
+                                    <small class="text-muted fst-italic">Lô: @nearestBatch.BatchCode</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">---</span>
+                                }
+                            </td>
+
+                            <td class="text-center">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm me-1"
+                                    title="Sửa thông tin">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger btn-sm"
+                                    onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');" title="Xóa">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-box-seam display-4 d-block mb-3 opacity-50"></i>
+                                Không tìm thấy sản phẩm nào. Hãy bắt đầu bằng việc Nhập kho.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,53 @@
+@model IEnumerable<HairCareShop.Core.Entities.Order>
+
+<h2>Quản lý Đơn hàng</h2>
+
+<table class="table table-hover mt-3 bg-white shadow-sm rounded">
+    <thead class="table-light">
+        <tr>
+            <th>Mã ĐH</th>
+            <th>Ngày đặt</th>
+            <th>Khách hàng</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+            <th>Shipper</th>
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>#@item.Id</td>
+                <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>@item.User?.FullName</td>
+                <td class="fw-bold text-primary">@item.TotalAmount.ToString("N0") đ</td>
+                <td>
+                    @if (item.Status == "Pending")
+                    {
+                        <span class="badge bg-secondary">Chờ xử lý</span>
+                    }
+                    else if (item.Status == "Shipping")
+                    {
+
+                        <span class="badge bg-info">Đang giao</span>
+                    }
+                    else if (item.Status == "Delivered")
+                    {
+
+                        <span class="badge bg-success">Hoàn thành</span>
+                    }
+                    else
+                    {
+
+                        <span class="badge bg-danger">@item.Status</span>
+                    }
+                </td>
+                <td>@(item.Shipper?.FullName ?? "---")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Xem</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
