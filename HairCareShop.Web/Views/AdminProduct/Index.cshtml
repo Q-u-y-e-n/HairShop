@@ -38,10 +38,10 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light text-muted small text-uppercase">
                     <tr>
-                        <th style="width: 70px;" class="text-center">Ảnh</th>
+                        <th style="width: 80px;" class="text-center">Ảnh</th>
                         <th>Thông tin sản phẩm</th>
                         <th>Giá bán lẻ</th>
-                        <th>Tồn kho hiện tại</th>
+                        <th>Tồn kho</th>
                         <th>Hạn dùng (Gần nhất)</th>
                         <th class="text-center" style="width: 120px;">Thao tác</th>
                     </tr>
@@ -54,14 +54,26 @@
 
                         <tr>
                             <td class="text-center">
-                                <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://via.placeholder.com/60" : item.ImageUrl)"
-                                    class="rounded border" width="60" height="60" style="object-fit: cover;" />
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" class="rounded border shadow-sm" width="60" height="60"
+                                        style="object-fit: cover;"
+                                        onerror="this.onerror=null; this.src='https://via.placeholder.com/60x60?text=No+Img';"
+                                        alt="@item.Name" />
+                                }
+                                else
+                                {
+                                    <img src="https://via.placeholder.com/60x60?text=No+Img" class="rounded border opacity-50"
+                                        width="60" height="60" />
+                                }
                             </td>
+
                             <td>
                                 <div class="fw-bold text-dark mb-1">@item.Name</div>
                                 <span class="badge bg-light text-dark border me-1">@item.Category?.Name</span>
                                 <small class="text-muted">@item.Brand</small>
                             </td>
+
                             <td class="fw-bold text-success">
                                 @item.Price.ToString("N0") đ
                             </td>
@@ -72,7 +84,7 @@
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-check-circle-fill text-success me-2"></i>
                                         <div>
-                                            <span class="fw-bold text-dark">@item.StockQuantity.ToString("N0")</span>
+                                            <span class="fw-bold text-dark fs-6">@item.StockQuantity.ToString("N0")</span>
                                             <small class="text-muted">@item.UnitName</small>
                                         </div>
                                     </div>
@@ -88,7 +100,7 @@
                                 @if (nearestBatch != null)
                                 {
                                     var daysLeft = (nearestBatch.ExpiryDate - DateTime.Now).TotalDays;
-                                    var textColor = daysLeft < 30 ? "text-danger fw-bold" : (daysLeft < 90 ? "text-warning fw-bold" : "text-dark");
+                                    var textColor = daysLeft < 30 ? "text-danger fw-bold" : (daysLeft < 90 ? "text-warning          fw-bold" : "text-dark");
 
                                     <div class="@textColor">
                                         <i class="bi bi-calendar-event me-1"></i>

@@ -15,3 +15,4 @@ E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Data\obj\Debug\net9.0
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Data\obj\Debug\net9.0\HairCareShop.Data.pdb
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Data\obj\Debug\net9.0\HairCareShop.Data.genruntimeconfig.cache
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Data\obj\Debug\net9.0\ref\HairCareShop.Data.dll
+E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Data\obj\Debug\net9.0\HairCareShop.Data.sourcelink.json

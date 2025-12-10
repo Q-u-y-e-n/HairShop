@@ -1,6 +1,6 @@
 using HairCareShop.Core.Entities;
 using HairCareShop.Data.EF;
-using HairCareShop.Web.Models; // Sử dụng ViewModel
+using HairCareShop.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -11,44 +11,30 @@ namespace HairCareShop.Web.Controllers
     {
         private readonly HairCareShopDbContext _context;
 
-        public AdminImportController(HairCareShopDbContext context)
+        // 1. KHAI BÁO BIẾN MÔI TRƯỜNG (Để sửa lỗi _webHostEnvironment)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+
+        // 2. INJECT VÀO CONSTRUCTOR
+        public AdminImportController(HairCareShopDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
-        // ==========================================
-        // 1. DANH SÁCH LỊCH SỬ NHẬP (INDEX)
-        // ==========================================
-        // 1. DANH SÁCH LỊCH SỬ (INDEX)
+        // ... (Các hàm Index, Details, Create GET giữ nguyên) ...
         public async Task<IActionResult> Index()
         {
-            var list = await _context.ImportNotes
-                .Include(i => i.Supplier) // Lấy kèm tên Nhà cung cấp
-                .OrderByDescending(i => i.ImportDate) // Sắp xếp mới nhất lên đầu
-                .ToListAsync();
-
+            var list = await _context.ImportNotes.Include(i => i.Supplier).OrderByDescending(i => i.ImportDate).ToListAsync();
             return View(list);
         }
 
-        // ==========================================
-        // 2. CHI TIẾT PHIẾU NHẬP (DETAILS)
-        // ==========================================
-        // 2. XEM CHI TIẾT PHIẾU (DETAILS)
         public async Task<IActionResult> Details(int id)
         {
-            var note = await _context.ImportNotes
-                .Include(i => i.Supplier)
-                .Include(i => i.Details).ThenInclude(d => d.Product) // Lấy chi tiết sp
-                .FirstOrDefaultAsync(m => m.Id == id);
-
+            var note = await _context.ImportNotes.Include(i => i.Supplier).Include(i => i.Details).ThenInclude(d => d.Product).FirstOrDefaultAsync(m => m.Id == id);
             if (note == null) return NotFound();
-
             return View(note);
         }
 
-        // ==========================================
-        // 3. GIAO DIỆN TẠO MỚI (GET)
-        // ==========================================
         [HttpGet]
         public async Task<IActionResult> Create()
         {
@@ -56,122 +42,72 @@ namespace HairCareShop.Web.Controllers
             return View();
         }
 
-        // ==========================================
-        // 4. XỬ LÝ LƯU PHIẾU NHẬP (POST) - QUAN TRỌNG
-        // ==========================================
+        // ... (Hàm Create POST giữ nguyên logic của bạn) ...
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ImportNoteViewModel model)
         {
-            // 1. Validate dữ liệu
             if (model.SupplierId == 0) ModelState.AddModelError("SupplierId", "Vui lòng chọn Nhà cung cấp.");
             if (model.Details == null || !model.Details.Any()) ModelState.AddModelError("", "Vui lòng nhập ít nhất 1 sản phẩm.");
 
-            if (!ModelState.IsValid)
-            {
-                await PrepareViewBags();
-                return View(model);
-            }
+            if (!ModelState.IsValid) { await PrepareViewBags(); return View(model); }
 
-            // 2. Bắt đầu Transaction (Giao dịch)
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // A. Tạo Header Phiếu Nhập
-                var note = new ImportNote
-                {
-                    SupplierId = model.SupplierId,
-                    ImportDate = DateTime.Now,
-                    Note = model.Note,
-                    TotalAmount = 0
-                };
-
+                var note = new ImportNote { SupplierId = model.SupplierId, ImportDate = DateTime.Now, Note = model.Note, TotalAmount = 0 };
                 _context.ImportNotes.Add(note);
-                await _context.SaveChangesAsync(); // LƯU ĐỂ LẤY ID (note.Id)
+                await _context.SaveChangesAsync();
 
-                decimal totalAmount = 0;
-
-                // B. Duyệt qua từng dòng chi tiết
+                decimal total = 0;
                 foreach (var item in model.Details)
                 {
-                    // Tính toán quy đổi: Tổng lẻ = Số thùng * Quy cách
-                    int finalQty = item.BoxQuantity * item.UnitsPerBox;
-                    decimal lineTotal = finalQty * item.ImportPrice;
+                    int qty = item.BoxQuantity * item.UnitsPerBox;
+                    decimal lineTotal = qty * item.ImportPrice;
 
-                    // C. Tạo Chi tiết phiếu nhập
-                    var detail = new ImportNoteDetail
+                    _context.ImportNoteDetails.Add(new ImportNoteDetail
                     {
-                        ImportNoteId = note.Id, // <--- QUAN TRỌNG: Gán ID của phiếu vừa tạo
+                        ImportNoteId = note.Id, // Đã có trường này nhờ Bước 1
                         ProductId = item.ProductId,
                         BatchCode = item.BatchCode,
                         ManufacturingDate = item.ManufacturingDate,
                         ExpiryDate = item.ExpiryDate,
                         BoxQuantity = item.BoxQuantity,
                         UnitsPerBox = item.UnitsPerBox,
-                        TotalQuantity = finalQty,
+                        TotalQuantity = qty,
                         ImportPrice = item.ImportPrice
-                    };
-                    _context.ImportNoteDetails.Add(detail);
+                    });
 
-                    // D. Cập nhật Kho Tổng (Product)
                     var product = await _context.Products.FindAsync(item.ProductId);
-                    if (product != null)
-                    {
-                        product.StockQuantity += finalQty; // Cộng dồn tồn kho
-                        // Có thể cập nhật giá nhập mới nhất vào giá gốc sản phẩm nếu muốn
-                        // product.OriginalPrice = item.ImportPrice; 
-                    }
+                    if (product != null) product.StockQuantity += qty;
 
-                    // E. Cập nhật/Tạo Lô Hàng (ProductBatch)
-                    var existingBatch = await _context.ProductBatches
-                        .FirstOrDefaultAsync(b => b.ProductId == item.ProductId && b.BatchCode == item.BatchCode);
+                    var batch = await _context.ProductBatches.FirstOrDefaultAsync(b => b.ProductId == item.ProductId && b.BatchCode == item.BatchCode);
+                    if (batch != null) batch.Quantity += qty;
+                    else _context.ProductBatches.Add(new ProductBatch { ProductId = item.ProductId, BatchCode = item.BatchCode, ManufacturingDate = item.ManufacturingDate, ExpiryDate = item.ExpiryDate, Quantity = qty });
 
-                    if (existingBatch != null)
-                    {
-                        existingBatch.Quantity += finalQty; // Lô đã có -> Cộng thêm
-                    }
-                    else
-                    {
-                        // Lô chưa có -> Tạo mới
-                        _context.ProductBatches.Add(new ProductBatch
-                        {
-                            ProductId = item.ProductId,
-                            BatchCode = item.BatchCode,
-                            ManufacturingDate = item.ManufacturingDate,
-                            ExpiryDate = item.ExpiryDate,
-                            Quantity = finalQty
-                        });
-                    }
-
-                    totalAmount += lineTotal;
+                    total += lineTotal;
                 }
 
-                // F. Cập nhật Tổng tiền và Commit
-                note.TotalAmount = totalAmount;
+                note.TotalAmount = total;
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
-                await transaction.CommitAsync(); // Xác nhận mọi thay đổi thành công
-
-                // G. Chuyển hướng về trang Danh sách
-                // Chuyển hướng sang Controller khác: (Tên Action, Tên Controller - bỏ chữ Controller)
                 return RedirectToAction("Index", "AdminProduct");
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(); // Gặp lỗi thì hoàn tác
-                ViewBag.Error = "Lỗi hệ thống: " + ex.Message; // Hiển thị lỗi ra View
-                if (ex.InnerException != null) ViewBag.Error += " (" + ex.InnerException.Message + ")";
-
+                await transaction.RollbackAsync();
+                ViewBag.Error = ex.Message;
                 await PrepareViewBags();
                 return View(model);
             }
         }
 
         // ==========================================
-        // 5. API TẠO NHANH SẢN PHẨM (AJAX)
+        // 3. SỬA HÀM QUICK CREATE (LƯU ẢNH CHUẨN)
         // ==========================================
         [HttpPost]
-        public async Task<IActionResult> QuickCreateProduct(string Name, int CategoryId, decimal Price, string UnitName, int UnitsPerBox)
+        public async Task<IActionResult> QuickCreateProduct(string Name, int CategoryId, decimal Price, string UnitName, int UnitsPerBox, IFormFile? ImageFile)
         {
             try
             {
@@ -182,10 +118,34 @@ namespace HairCareShop.Web.Controllers
                     Price = Price,
                     UnitName = UnitName,
                     UnitsPerBox = UnitsPerBox,
-                    StockQuantity = 0, // Tồn kho = 0 (Sẽ tăng khi nhập phiếu)
+                    StockQuantity = 0,
                     Brand = "Mới",
                     Description = "Tạo nhanh từ màn hình nhập kho"
                 };
+
+                // --- LOGIC LƯU ẢNH ---
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    // Tạo tên file ngẫu nhiên
+                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(ImageFile.FileName);
+
+                    // Lấy đường dẫn thư mục wwwroot/products/images
+                    string uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "products", "images");
+
+                    // Tạo thư mục nếu chưa có
+                    if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
+
+                    // Lưu file vật lý
+                    string filePath = Path.Combine(uploadFolder, fileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await ImageFile.CopyToAsync(stream);
+                    }
+
+                    // Lưu đường dẫn vào DB (Có dấu / ở đầu)
+                    newProduct.ImageUrl = "/products/images/" + fileName;
+                }
+                // ---------------------
 
                 _context.Products.Add(newProduct);
                 await _context.SaveChangesAsync();
@@ -208,23 +168,11 @@ namespace HairCareShop.Web.Controllers
             }
         }
 
-        // HELPER: Load dữ liệu cho Dropdown
         private async Task PrepareViewBags()
         {
             ViewBag.Suppliers = new SelectList(await _context.Suppliers.ToListAsync(), "Id", "Name");
             ViewBag.Categories = new SelectList(await _context.Categories.ToListAsync(), "Id", "Name");
-
-            // Lấy dữ liệu sản phẩm để JS xử lý
-            var products = await _context.Products.Select(p => new
-            {
-                p.Id,
-                p.Name,
-                p.UnitsPerBox,
-                p.UnitName,
-                p.Price
-            }).ToListAsync();
-
-            ViewBag.ProductsData = products;
+            ViewBag.ProductsData = await _context.Products.Select(p => new { p.Id, p.Name, p.UnitsPerBox, p.UnitName, p.Price }).ToListAsync();
         }
     }
 }

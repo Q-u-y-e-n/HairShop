@@ -6,9 +6,9 @@ namespace HairCareShop.Core.Entities
     {
         public int Id { get; set; }
 
-        // --- ĐÂY LÀ DÒNG BẠN ĐANG THIẾU ---
+        // --- BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ LIÊN KẾT VỚI PHIẾU NHẬP ---
         public int ImportNoteId { get; set; }
-        // ----------------------------------
+        // -------------------------------------------------------------
 
         public int ProductId { get; set; }
         public string BatchCode { get; set; } = string.Empty;
@@ -21,8 +21,9 @@ namespace HairCareShop.Core.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal ImportPrice { get; set; }
 
-        // Navigation properties (Liên kết)
+        // Navigation properties
         public Product? Product { get; set; }
+
         [ForeignKey("ImportNoteId")]
         public ImportNote? ImportNote { get; set; }
     }

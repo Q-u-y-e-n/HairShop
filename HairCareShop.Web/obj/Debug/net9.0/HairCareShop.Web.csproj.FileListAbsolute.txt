@@ -141,3 +141,4 @@ E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Web\obj\Debug\net9.0\
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Web\obj\Debug\net9.0\HairCareShop.Web.pdb
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Web\obj\Debug\net9.0\HairCareShop.Web.genruntimeconfig.cache
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Web\obj\Debug\net9.0\ref\HairCareShop.Web.dll
+E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Web\obj\Debug\net9.0\HairCareShop.Web.sourcelink.json

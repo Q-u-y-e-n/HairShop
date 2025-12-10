@@ -9,3 +9,4 @@ E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0\refint\HairCareShop.Core.dll
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.pdb
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0\ref\HairCareShop.Core.dll
+E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.sourcelink.json
