@@ -1,0 +1,62 @@
+using HairCareShop.Core.Enums;
+using HairCareShop.Data.EF;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace HairCareShop.Web.Controllers
+{
+    public class ShipperOrderController : Controller
+    {
+        private readonly HairCareShopDbContext _context;
+
+        public ShipperOrderController(HairCareShopDbContext context)
+        {
+            _context = context;
+        }
+
+        // 1. DANH SÁCH ĐƠN HÀNG CỦA TÔI (Shipper đang đăng nhập)
+        public async Task<IActionResult> Index()
+        {
+            // GIẢ LẬP: Lấy ID shipper đang đăng nhập (Trong thực tế bạn lấy từ User.Identity)
+            // Ví dụ này mình hardcode ID = 2 (Giả sử User ID 2 là Shipper)
+            // Bạn cần thay bằng: int shipperId = int.Parse(User.FindFirst("Id").Value);
+            int currentShipperId = 2;
+
+            var myOrders = await _context.Orders
+                .Where(o => o.ShipperId == currentShipperId) // Chỉ lấy đơn của mình
+                .Include(o => o.User) // Thông tin khách để gọi điện
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+
+            return View(myOrders);
+        }
+
+        // 2. CẬP NHẬT TRẠNG THÁI GIAO HÀNG (Shipping / Completed / Cancelled)
+        [HttpPost]
+        public async Task<IActionResult> UpdateDeliveryStatus(int orderId, int status)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null) return Json(new { success = false });
+
+            // Chuyển int sang Enum
+            OrderStatus newStatus = (OrderStatus)status;
+
+            // Logic kiểm tra hợp lệ (Ví dụ: Không thể quay ngược trạng thái)
+            if (order.Status == OrderStatus.Completed || order.Status == OrderStatus.Cancelled)
+            {
+                return Json(new { success = false, message = "Đơn hàng đã kết thúc, không thể cập nhật." });
+            }
+
+            order.Status = newStatus;
+
+            // Nếu giao thành công -> Cập nhật ngày thanh toán (nếu COD)
+            if (newStatus == OrderStatus.Completed)
+            {
+                // order.PaymentDate = DateTime.Now; 
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+    }
+}

@@ -19,5 +19,8 @@ namespace HairCareShop.Data.EF
         public DbSet<ProductBatch> ProductBatches { get; set; }
         public DbSet<ImportNote> ImportNotes { get; set; }
         public DbSet<ImportNoteDetail> ImportNoteDetails { get; set; }
+        public DbSet<Review> Reviews { get; set; }
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
     }
 }

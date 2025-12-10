@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Core\\HairCareShop.Core.csproj",
+      "projectUniqueName": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Core\\HairCareShop.Core.csproj",
       "projectName": "HairCareShop.Core",
-      "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Core\\HairCareShop.Core.csproj",
+      "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Core\\HairCareShop.Core.csproj",
       "packagesPath": "C:\\Users\\Dell\\.nuget\\packages\\",
-      "outputPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Core\\obj\\",
+      "outputPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Core\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

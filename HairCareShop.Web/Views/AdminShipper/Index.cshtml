@@ -1,0 +1,75 @@
+@model IEnumerable<HairCareShop.Core.Entities.User>
+
+@{
+    ViewData["Title"] = "Quản lý Shipper";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-primary fw-bold m-0"><i class="bi bi-truck me-2"></i>Đội ngũ Shipper</h3>
+        <a asp-action="Create" class="btn btn-primary fw-bold shadow-sm"><i class="bi bi-plus-lg"></i> Thêm Shipper</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Họ tên</th>
+                        <th>Liên hệ</th>
+                        <th class="text-center">Tổng đơn đã giao</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th class="text-center">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        // Đếm đơn hoàn thành dựa trên navigation property (cần include ở controller)
+                        // Lưu ý: item.Orders ở đây phải là list các đơn mà ShipperId == item.Id
+                        // (Ở controller ta đã include điều kiện này rồi)
+                        int deliveredCount = item.ShippedOrders?.Count(o => o.Status ==
+                        HairCareShop.Core.Enums.OrderStatus.Completed) ?? 0;
+
+                        <tr>
+                            <td class="ps-4 fw-bold">@item.FullName</td>
+                            <td>
+                                <div><i class="bi bi-telephone me-1"></i> @(item.PhoneNumber ?? "---")</div>
+                                <div class="small text-muted">@item.Email</div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-success rounded-pill px-3">@deliveredCount chuyến</span>
+                            </td>
+                            <td class="text-center">
+                                <span id="badge-@item.Id" class="badge @(item.IsLocked ? "bg-danger" : "bg-primary")">
+                                    @(item.IsLocked ? "Đang khóa" : "Hoạt động")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info"
+                                    title="Xem lịch sử"><i class="bi bi-bar-chart-line"></i></a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning"
+                                    title="Sửa"><i class="bi bi-pencil"></i></a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="toggleLock(@item.Id)"
+                                    title="Khóa/Mở"><i class="bi bi-lock"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleLock(id) {
+        if (!confirm('Đổi trạng thái shipper này?')) return;
+        fetch('/AdminShipper/ToggleLock?id=' + id, { method: 'POST' }).then(r => r.json()).then(d => {
+            if (d.success) {
+                let b = document.getElementById('badge-' + id);
+                b.className = d.isLocked ? "badge bg-danger" : "badge bg-primary";
+                b.innerText = d.isLocked ? "Đang khóa" : "Hoạt động";
+            }
+        });
+    }
+</script>

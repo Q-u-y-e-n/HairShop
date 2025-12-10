@@ -2837,11 +2837,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Web\\HairCareShop.Web.csproj",
+      "projectUniqueName": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Web\\HairCareShop.Web.csproj",
       "projectName": "HairCareShop.Web",
-      "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Web\\HairCareShop.Web.csproj",
+      "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Web\\HairCareShop.Web.csproj",
       "packagesPath": "C:\\Users\\Dell\\.nuget\\packages\\",
-      "outputPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Web\\obj\\",
+      "outputPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Web\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -2862,14 +2862,14 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Core\\HairCareShop.Core.csproj": {
-              "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Core\\HairCareShop.Core.csproj"
+            "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Core\\HairCareShop.Core.csproj": {
+              "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Core\\HairCareShop.Core.csproj"
             },
-            "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Data\\HairCareShop.Data.csproj": {
-              "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Data\\HairCareShop.Data.csproj"
+            "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Data\\HairCareShop.Data.csproj": {
+              "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Data\\HairCareShop.Data.csproj"
             },
-            "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Service\\HairCareShop.Service.csproj": {
-              "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMĐT\\haircare\\HairCareShop.Service\\HairCareShop.Service.csproj"
+            "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Service\\HairCareShop.Service.csproj": {
+              "projectPath": "E:\\chuyendulieu\\hk1_nam4_25-26\\TMDT\\haircare\\HairCareShop.Service\\HairCareShop.Service.csproj"
             }
           }
         }

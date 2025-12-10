@@ -1,0 +1,35 @@
+@model HairCareShop.Core.Entities.User
+@{
+    ViewData["Title"] = "Thêm Shipper Mới";
+}
+
+<div class="container d-flex justify-content-center">
+    <div class="card shadow-sm border-0 col-md-6">
+        <div class="card-header bg-primary text-white fw-bold py-3">Thêm Shipper</div>
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post">
+                <div class="mb-3">
+                    <label class="fw-bold">Họ tên Shipper</label>
+                    <input asp-for="FullName" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Email (Tài khoản)</label>
+                    <input asp-for="Email" type="email" class="form-control" required />
+                    <small class="text-muted">Pass mặc định: 123456</small>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Số điện thoại</label>
+                    <input asp-for="PhoneNumber" class="form-control" required />
+                </div>
+                <div class="mb-4">
+                    <label class="fw-bold">Khu vực hoạt động (Địa chỉ)</label>
+                    <input asp-for="Address" class="form-control" />
+                </div>
+                <div class="text-end">
+                    <a asp-action="Index" class="btn btn-secondary">Hủy</a>
+                    <button class="btn btn-primary px-4">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

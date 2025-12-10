@@ -1,0 +1,52 @@
+@model IEnumerable<HairCareShop.Core.Entities.Review>
+
+@{
+    ViewData["Title"] = "Quản lý Đánh giá";
+}
+
+<div class="container-fluid">
+    <h3 class="text-primary fw-bold mb-4">⭐ Đánh giá từ Khách hàng</h3>
+    <div class="card shadow-sm border-0">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr>
+                    <th>Khách hàng</th>
+                    <th>Sản phẩm</th>
+                    <th>Đánh giá</th>
+                    <th>Nội dung</th>
+                    <th>Ảnh thực tế</th>
+                    <th>Ngày đánh giá</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">@item.User?.FullName</td>
+                        <td>@item.Product?.Name</td>
+                        <td>
+                            @for (int i = 0; i < item.Rating; i++)
+                            {
+                                <i class="bi bi-star-fill text-warning"></i>
+                            }
+                        </td>
+                        <td>@item.Comment</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl"
+                                    style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;" />
+                            }
+                            else
+                            {
+
+                                <span class="text-muted small">Không có ảnh</span>
+                            }
+                        </td>
+                        <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

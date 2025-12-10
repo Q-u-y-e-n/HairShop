@@ -10,3 +10,15 @@ E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.pdb
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0\ref\HairCareShop.Core.dll
 E:\chuyendulieu\hk1_nam4_25-26\TMĐT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.sourcelink.json
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\bin\Debug\net9.0\HairCareShop.Core.deps.json
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\bin\Debug\net9.0\HairCareShop.Core.dll
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\bin\Debug\net9.0\HairCareShop.Core.pdb
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.GeneratedMSBuildEditorConfig.editorconfig
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.AssemblyInfoInputs.cache
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.AssemblyInfo.cs
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.csproj.CoreCompileInputs.cache
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.sourcelink.json
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.dll
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\refint\HairCareShop.Core.dll
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\HairCareShop.Core.pdb
+E:\chuyendulieu\hk1_nam4_25-26\TMDT\haircare\HairCareShop.Core\obj\Debug\net9.0\ref\HairCareShop.Core.dll
