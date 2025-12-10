@@ -46,20 +46,6 @@ class ApiService {
     throw Exception('Lỗi tải đơn hàng');
   }
 
-  // 3. Cập nhật trạng thái đơn (Shipper)
-  Future<bool> updateOrderStatus(int orderId, int status, int shipperId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/ShipperApi/update-status'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "orderId": orderId,
-        "newStatus": status,
-        "shipperId": shipperId,
-      }),
-    );
-    return response.statusCode == 200;
-  }
-
   // Trong class ApiService
   // Đăng ký khách hàng
   // Đăng ký
@@ -154,14 +140,6 @@ class ApiService {
   // Thêm vào class ApiService
 
   // 1. Gửi đơn hàng (Checkout)
-  Future<bool> createOrder(Map<String, dynamic> orderData) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/OrderApi/create'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(orderData),
-    );
-    return response.statusCode == 200;
-  }
 
   // 2. Lấy chi tiết đơn hàng
   Future<Map<String, dynamic>> getOrderDetail(int orderId) async {
@@ -241,5 +219,81 @@ class ApiService {
     await http.delete(
       Uri.parse('$baseUrl/CartApi/remove?userId=$userId&productId=$productId'),
     );
+  }
+
+  // [SHIPPER] Lấy danh sách (Thêm tham số shipperId)
+  Future<List<dynamic>> getOrdersByStatus(String status, int shipperId) async {
+    // Gọi API kèm theo shipperId
+    final response = await http.get(
+      Uri.parse('$baseUrl/OrderApi/list?status=$status&shipperId=$shipperId'),
+    );
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    return [];
+  }
+
+  // [SHIPPER] Cập nhật trạng thái (Thêm tham số shipperId)
+  Future<bool> updateOrderStatus(
+    int orderId,
+    String newStatus,
+    int shipperId,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/OrderApi/update-status'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "orderId": orderId,
+        "newStatus": newStatus,
+        "shipperId": shipperId, // Gửi ID shipper lên
+      }),
+    );
+    return response.statusCode == 200;
+  }
+
+  // Lấy danh sách đánh giá của 1 sản phẩm
+  Future<List<dynamic>> getProductReviews(int productId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/ReviewApi/product/$productId'),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return [];
+  }
+
+  Future<bool> createOrder(
+    int userId,
+    String address,
+    String phone,
+    String paymentMethod,
+    List<dynamic> items,
+  ) async {
+    final url = Uri.parse('$baseUrl/OrderApi/create');
+    final body = jsonEncode({
+      "userId": userId,
+      "address": address,
+      "phone": phone, // <--- Gửi SĐT lên
+      "paymentMethod": paymentMethod,
+      "items": items
+          .map(
+            (i) => {
+              "productId": int.parse(i.id),
+              "quantity": i.quantity,
+              "price": i.price,
+            },
+          )
+          .toList(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Lỗi createOrder: $e");
+      return false;
+    }
   }
 }

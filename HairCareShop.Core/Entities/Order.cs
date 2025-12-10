@@ -24,6 +24,7 @@ namespace HairCareShop.Core.Entities
 
         [Column(TypeName = "decimal(18,2)")] // Định dạng tiền tệ chuẩn SQL
         public decimal TotalAmount { get; set; }
+        public string? Phone { get; set; }
 
         // --- QUAN TRỌNG: DÙNG ENUM THAY VÌ STRING ---
         public OrderStatus Status { get; set; } = OrderStatus.Pending;

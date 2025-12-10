@@ -56,29 +56,45 @@ namespace HairCareShop.Web.Controllers
         }
 
         // 3. SỬA THÔNG TIN
-        public async Task<IActionResult> Edit(int id)
+        // GET: AdminShipper/Edit/5
+        public async Task<IActionResult> Edit(int? id)
         {
+            if (id == null) return NotFound();
             var user = await _context.Users.FindAsync(id);
-            if (user == null || user.Role != "Shipper") return NotFound();
+            if (user == null) return NotFound();
             return View(user);
         }
 
+        // POST: AdminShipper/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, User user)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,PhoneNumber,Address")] User user)
         {
             if (id != user.Id) return NotFound();
 
-            var existing = await _context.Users.FindAsync(id);
-            if (existing == null) return NotFound();
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Lấy user cũ từ DB lên để chỉ update những trường cho phép
+                    var existingUser = await _context.Users.FindAsync(id);
+                    if (existingUser == null) return NotFound();
 
-            existing.FullName = user.FullName;
-            existing.PhoneNumber = user.PhoneNumber;
-            existing.Address = user.Address;
-            // Không sửa Email, Role
+                    existingUser.FullName = user.FullName;
+                    existingUser.PhoneNumber = user.PhoneNumber;
+                    existingUser.Address = user.Address;
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+                    _context.Update(existingUser);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!_context.Users.Any(e => e.Id == user.Id)) return NotFound();
+                    else throw;
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            return View(user);
         }
 
         // 4. XEM CHI TIẾT & THỐNG KÊ (QUAN TRỌNG)

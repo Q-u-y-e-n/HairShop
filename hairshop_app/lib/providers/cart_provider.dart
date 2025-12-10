@@ -7,47 +7,44 @@ class CartProvider with ChangeNotifier {
   final ApiService _api = ApiService();
   int? _userId;
 
+  // Getter lấy danh sách items
   Map<String, CartItem> get items => {..._items};
+
+  // Đếm số lượng
   int get itemCount => _items.length;
 
+  // Tính tổng tiền
   double get totalAmount {
     var total = 0.0;
     _items.forEach((key, item) => total += item.price * item.quantity);
     return total;
   }
 
-  // --- HÀM TẢI GIỎ HÀNG (QUAN TRỌNG NHẤT) ---
+  // --- HÀM TẢI GIỎ HÀNG ---
   Future<void> fetchCart(int userId) async {
     _userId = userId;
-    print("🚀 [CartProvider] Bắt đầu tải giỏ hàng cho User ID: $userId");
-
     try {
       var list = await _api.getCart(userId);
-      print("✅ [CartProvider] API trả về: $list"); // Xem API trả về gì ở đây
-
       _items = {};
       for (var i in list) {
-        // Kiểm tra kỹ tên trường dữ liệu từ API
-        // Nếu API trả về 'productName' mà bạn gọi i['name'] là lỗi ngay
         _items.putIfAbsent(
           i['productId'].toString(),
           () => CartItem(
             id: i['productId'].toString(),
-            title: i['productName'] ?? "Không tên", // Fallback nếu null
+            title: i['productName'] ?? "Sản phẩm",
             price: (i['price'] as num).toDouble(),
             quantity: i['quantity'],
             imageUrl: i['imageUrl'],
           ),
         );
       }
-      print("📦 [CartProvider] Đã nạp ${_items.length} sản phẩm vào RAM.");
       notifyListeners();
     } catch (e) {
-      print("❌ [CartProvider] LỖI TẢI GIỎ: $e");
+      print("Lỗi tải giỏ: $e");
     }
   }
 
-  // --- CÁC HÀM KHÁC GIỮ NGUYÊN NHƯ CŨ ---
+  // --- HÀM THÊM VÀO GIỎ ---
   Future<void> addItem(
     int productId,
     double price,
@@ -80,20 +77,11 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
 
     if (_userId != null) {
-      try {
-        print(
-          "----> Đang gửi yêu cầu lưu Server: User $_userId, Product $productId",
-        );
-        await _api.addToCart(_userId!, productId, 1);
-        print("----> Đã gửi xong!");
-      } catch (e) {
-        print("LỖI LƯU GIỎ HÀNG: $e");
-      }
-    } else {
-      print("CHƯA CÓ USER ID - KHÔNG LƯU ĐƯỢC");
+      await _api.addToCart(_userId!, productId, 1);
     }
   }
 
+  // --- HÀM GIẢM SỐ LƯỢNG ---
   Future<void> removeSingleItem(String productId) async {
     if (!_items.containsKey(productId)) return;
     if (_items[productId]!.quantity > 1) {
@@ -111,22 +99,53 @@ class CartProvider with ChangeNotifier {
       _items.remove(productId);
     }
     notifyListeners();
-    if (_userId != null) {
+    if (_userId != null)
       await _api.decreaseCartItem(_userId!, int.parse(productId));
-    }
   }
 
+  // --- HÀM XÓA HẲN 1 MÓN ---
   Future<void> removeItem(String productId) async {
     _items.remove(productId);
     notifyListeners();
-    if (_userId != null) {
+    if (_userId != null)
       await _api.removeCartItem(_userId!, int.parse(productId));
-    }
   }
 
+  // --- HÀM DỌN SẠCH GIỎ (Logout) ---
   void clear() {
     _items = {};
     _userId = null;
     notifyListeners();
+  }
+
+  // ====================================================
+  // HÀM THANH TOÁN (QUAN TRỌNG: NHẬN THÊM PHONE)
+  // ====================================================
+  Future<bool> clearAndCreateOrder(
+    int userId,
+    String address,
+    String phone,
+    String paymentMethod,
+  ) async {
+    // 1. Gọi API tạo đơn (truyền cả Phone)
+    bool success = await _api.createOrder(
+      userId,
+      address,
+      phone, // <--- Truyền SĐT xuống API Service
+      paymentMethod,
+      _items.values.toList(),
+    );
+
+    if (success) {
+      // 2. Nếu thành công -> Xóa sạch giỏ hàng trên App
+      _items = {};
+      notifyListeners();
+
+      // (Tùy chọn) Gọi API xóa giỏ hàng trên Server nếu cần
+      // await _api.clearCart(userId);
+
+      return true;
+    }
+    return false;
   }
 }

@@ -39,10 +39,12 @@ namespace HairCareShop.Web.Controllers.Api
                     price = p.Price,
                     imageUrl = p.ImageUrl,
                     brand = p.Brand,
-                    categoryName = p.Category.Name
+                    categoryName = p.Category.Name,
+                    // --- THÊM DÒNG NÀY ---
+                    description = p.Description ?? "" // Hoặc p.Detail tùy tên bạn đặt trong Entity
+                    // ---------------------
                 })
                 .ToListAsync();
-
             return Ok(products);
         }
     }
