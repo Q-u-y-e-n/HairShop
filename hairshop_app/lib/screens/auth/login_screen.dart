@@ -7,7 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart'; // Quan trọng: Để tải giỏ hàng
 
 // Import các màn hình điều hướng
-import '../shipper/shipper_home_screen.dart';
+import '../shipper/shipper_main_screen.dart';
 import '../customer/customer_home_screen.dart';
 import 'register_screen.dart';
 
@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Chuyển sang giao diện Shipper
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => ShipperHomeScreen()),
+          MaterialPageRoute(builder: (_) => ShipperMainScreen()),
         );
       } else {
         // Chuyển sang giao diện Khách hàng

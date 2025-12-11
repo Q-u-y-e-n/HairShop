@@ -203,6 +203,31 @@ namespace HairCareShop.Web.Controllers.Api
             await _context.SaveChangesAsync();
             return Ok(new { success = true });
         }
+        // 6. [SHIPPER] THỐNG KÊ HIỆU SUẤT GIAO HÀNG
+        [HttpGet("shipper-stats")]
+        public async Task<IActionResult> GetShipperStats(int shipperId)
+        {
+            // Lấy tất cả đơn hàng đã kết thúc của Shipper này
+            var orders = await _context.Orders
+                .Where(o => o.ShipperId == shipperId &&
+                           (o.Status == OrderStatus.Completed || o.Status == OrderStatus.Cancelled))
+                .Select(o => new { o.OrderDate, o.Status })
+                .ToListAsync();
+
+            // Group theo Tháng/Năm (Xử lý trên Ram để tránh lỗi SQL version cũ)
+            var stats = orders
+                .GroupBy(o => new { o.OrderDate.Month, o.OrderDate.Year })
+                .Select(g => new
+                {
+                    month = $"{g.Key.Month}/{g.Key.Year}",
+                    successCount = g.Count(x => x.Status == OrderStatus.Completed),
+                    failedCount = g.Count(x => x.Status == OrderStatus.Cancelled)
+                })
+                .OrderByDescending(x => x.month) // Tháng mới nhất lên đầu
+                .ToList();
+
+            return Ok(stats);
+        }
     }
 
     // --- CÁC CLASS DTO (Dữ liệu truyền lên) ---

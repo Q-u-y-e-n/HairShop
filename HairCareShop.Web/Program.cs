@@ -12,17 +12,25 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<HairCareShopDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// 2. ĐĂNG KÝ DI (DEPENDENCY INJECTION) - QUAN TRỌNG
-// (Khi Controller cần IProductRepository, hệ thống sẽ đưa ProductRepository)
+// 2. DI
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 
-// 3. Add services to the container.
+// 🚀 CORS — CHO PHÉP GỌI TỪ ĐIỆN THOẠI
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
+// 3. ADD MVC/API
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// PIPELINE
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -34,9 +42,12 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// 🚀 BẬT CORS
+app.UseCors("AllowAll");
+
 app.UseAuthorization();
 
-// Định nghĩa route cho MVC và API
+// API route + MVC route
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

@@ -4,10 +4,11 @@ class User {
   final String fullName;
   final String role;
 
-  // --- BỔ SUNG 2 TRƯỜNG NÀY ---
+  // --- QUAN TRỌNG: Phải có 2 biến này ---
   final String? phone;
   final String? address;
-  // ----------------------------
+  final String? avatarUrl;
+  // --------------------------------------
 
   User({
     required this.id,
@@ -16,32 +17,22 @@ class User {
     required this.role,
     this.phone,
     this.address,
+    this.avatarUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
-      email: json['email'] ?? "", // Tránh lỗi null
+      email: json['email'] ?? "",
       fullName: json['fullName'] ?? "Người dùng",
       role: json['role'] ?? "Customer",
 
-      // --- MAP DỮ LIỆU TỪ API ---
-      // Nếu API trả về 'phoneNumber' thì sửa dòng dưới thành json['phoneNumber']
+      // --- LỖI Ở ĐÂY: Bạn có thể đang thiếu 2 dòng này ---
+      // Kiểm tra kỹ tên trường trả về từ API (thường là chữ thường)
       phone: json['phone'],
       address: json['address'],
-      // --------------------------
+      avatarUrl: json['avatarUrl'],
+      // --------------------------------------------------
     );
-  }
-
-  // Hàm chuyển đổi sang Map (nếu cần lưu xuống local storage)
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'email': email,
-      'fullName': fullName,
-      'role': role,
-      'phone': phone,
-      'address': address,
-    };
   }
 }

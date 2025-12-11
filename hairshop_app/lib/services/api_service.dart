@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Đổi port 5194 thành port thực tế của bạn
-  static const String baseUrl = "http://localhost:5194/api";
+  static const String baseUrl = "http://192.168.90.5:5194/api";
 
   // 1. Đăng nhập
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -295,5 +295,67 @@ class ApiService {
       print("Lỗi createOrder: $e");
       return false;
     }
+  }
+  // ... (Các hàm cũ giữ nguyên)
+
+  // CẬP NHẬT THÔNG TIN CÁ NHÂN
+  Future<bool> updateProfile(
+    int userId,
+    String fullName,
+    String phone,
+    String address,
+  ) async {
+    final url = Uri.parse('$baseUrl/AuthApi/update-profile');
+    final body = jsonEncode({
+      "userId": userId,
+      "fullName": fullName,
+      "phone": phone,
+      "address": address,
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Lỗi updateProfile: $e");
+      return false;
+    }
+  }
+
+  // HÀM UPLOAD ẢNH
+  Future<String?> uploadAvatar(int userId, String filePath) async {
+    var uri = Uri.parse('$baseUrl/AuthApi/upload-avatar?userId=$userId');
+    var request = http.MultipartRequest('POST', uri);
+
+    // Đính kèm file
+    request.files.add(await http.MultipartFile.fromPath('file', filePath));
+
+    try {
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        var json = jsonDecode(response.body);
+        return json['avatarUrl']; // Trả về link ảnh mới từ Server
+      }
+    } catch (e) {
+      print("Lỗi upload: $e");
+    }
+    return null;
+  }
+
+  // THỐNG KÊ SHIPPER
+  Future<List<dynamic>> getShipperStats(int shipperId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/OrderApi/shipper-stats?shipperId=$shipperId'),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return [];
   }
 }
