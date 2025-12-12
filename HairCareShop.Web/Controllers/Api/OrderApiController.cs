@@ -18,9 +18,8 @@ namespace HairCareShop.Web.Controllers.Api
         }
 
         // ==========================================
-        // 1. TẠO ĐƠN HÀNG (Lưu cả SĐT khách nhập)
+        // 1. TẠO ĐƠN HÀNG (CÓ TRỪ TỒN KHO)
         // ==========================================
-        // 1. TẠO ĐƠN HÀNG (Lưu SĐT khách điền)
         [HttpPost("create")]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest req)
         {
@@ -30,27 +29,41 @@ namespace HairCareShop.Web.Controllers.Api
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // 1. Tạo đối tượng đơn hàng
                 var order = new Order
                 {
                     UserId = req.UserId,
                     OrderDate = DateTime.Now,
                     ShippingAddress = req.Address,
-
-                    // --- QUAN TRỌNG: Lưu SĐT từ Form ---
                     Phone = req.Phone,
-                    // ----------------------------------
-
                     PaymentMethod = req.PaymentMethod,
                     Status = OrderStatus.Pending,
                     TotalAmount = 0
                 };
 
                 _context.Orders.Add(order);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // Lưu để lấy ID đơn hàng
 
                 decimal total = 0;
+
+                // 2. Duyệt qua từng sản phẩm trong giỏ
                 foreach (var item in req.Items)
                 {
+                    // --- LOGIC TRỪ KHO (MỚI) ---
+                    var product = await _context.Products.FindAsync(item.ProductId);
+
+                    if (product == null)
+                        throw new Exception($"Sản phẩm ID {item.ProductId} không tồn tại");
+
+                    // Kiểm tra đủ hàng không
+                    if (product.StockQuantity < item.Quantity)
+                        throw new Exception($"Sản phẩm '{product.Name}' không đủ hàng (Còn: {product.StockQuantity})");
+
+                    // Trừ tồn kho
+                    product.StockQuantity -= item.Quantity;
+                    // ----------------------------------
+
+                    // Tạo chi tiết đơn hàng
                     var detail = new OrderDetail
                     {
                         OrderId = order.Id,
@@ -63,14 +76,15 @@ namespace HairCareShop.Web.Controllers.Api
                 }
 
                 order.TotalAmount = total;
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await _context.SaveChangesAsync(); // Lưu cập nhật (Đơn hàng + Sản phẩm đã trừ kho)
 
-                return Ok(new { success = true, orderId = order.Id });
+                await transaction.CommitAsync();   // Xác nhận giao dịch thành công
+
+                return Ok(new { success = true, message = "Thành công", orderId = order.Id });
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(); // Hoàn tác nếu có lỗi
                 return BadRequest(new { message = "Lỗi: " + ex.Message });
             }
         }
@@ -97,20 +111,18 @@ namespace HairCareShop.Web.Controllers.Api
         }
 
         // ==========================================
-        // 3. CHI TIẾT ĐƠN HÀNG (Hiện đúng SĐT cho Shipper xem)
+        // 3. CHI TIẾT ĐƠN HÀNG
         // ==========================================
-        // 2. CHI TIẾT ĐƠN HÀNG (Lấy SĐT chuẩn & Ảnh sản phẩm)
         [HttpGet("detail/{id}")]
         public async Task<IActionResult> GetOrderDetail(int id)
         {
             var order = await _context.Orders
                 .Include(o => o.User)
-                .Include(o => o.OrderDetails).ThenInclude(d => d.Product) // Include Product để lấy ảnh
+                .Include(o => o.OrderDetails).ThenInclude(d => d.Product)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null) return NotFound(new { message = "Không tìm thấy đơn" });
 
-            // LOGIC SĐT: Ưu tiên lấy trong đơn hàng (khách điền form), nếu không có mới lấy User
             string displayPhone = !string.IsNullOrEmpty(order.Phone)
                                   ? order.Phone
                                   : (order.User?.PhoneNumber ?? "Không có SĐT");
@@ -124,19 +136,14 @@ namespace HairCareShop.Web.Controllers.Api
                 address = order.ShippingAddress,
                 payment = order.PaymentMethod,
                 customerName = order.User?.FullName ?? "Khách lẻ",
-
-                phone = displayPhone, // <--- SĐT CHUẨN
-
+                phone = displayPhone,
                 items = order.OrderDetails.Select(d => new
                 {
                     productId = d.ProductId,
                     productName = d.Product?.Name ?? "Sản phẩm đã xóa",
                     quantity = d.Quantity,
                     price = d.UnitPrice,
-
-                    // --- QUAN TRỌNG: Trả về ảnh sản phẩm ---
                     imageUrl = d.Product?.ImageUrl
-                    // ---------------------------------------
                 }).ToList()
             };
 
@@ -144,9 +151,8 @@ namespace HairCareShop.Web.Controllers.Api
         }
 
         // ==========================================
-        // 4. DANH SÁCH CHO SHIPPER (Đã Fix Logic ẩn đơn)
+        // 4. DANH SÁCH CHO SHIPPER
         // ==========================================
-        // 3. DANH SÁCH SHIPPER (Cũng phải hiện đúng SĐT)
         [HttpGet("list")]
         public async Task<IActionResult> GetOrdersByStatus(string status, int? shipperId)
         {
@@ -171,10 +177,7 @@ namespace HairCareShop.Web.Controllers.Api
                 {
                     id = o.Id,
                     customerName = o.User.FullName ?? "Khách lẻ",
-
-                    // Logic SĐT chuẩn
                     phone = !string.IsNullOrEmpty(o.Phone) ? o.Phone : (o.User.PhoneNumber ?? "Không có SĐT"),
-
                     address = o.ShippingAddress,
                     totalAmount = o.TotalAmount,
                     date = o.OrderDate.ToString("dd/MM/yyyy HH:mm"),
@@ -186,35 +189,62 @@ namespace HairCareShop.Web.Controllers.Api
         }
 
         // ==========================================
-        // 5. SHIPPER NHẬN ĐƠN & CẬP NHẬT TRẠNG THÁI
+        // 5. CẬP NHẬT TRẠNG THÁI (TRẢ KHO NẾU HỦY)
         // ==========================================
         [HttpPost("update-status")]
         public async Task<IActionResult> UpdateOrderStatus([FromBody] UpdateStatusRequest req)
         {
-            var order = await _context.Orders.FindAsync(req.OrderId);
+            // Phải Include OrderDetails để biết đơn đó mua gì mà trả lại kho
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .FirstOrDefaultAsync(o => o.Id == req.OrderId);
+
             if (order == null) return NotFound(new { message = "Không tìm thấy đơn" });
-            if (!Enum.TryParse<OrderStatus>(req.NewStatus, true, out var statusEnum)) return BadRequest(new { message = "Trạng thái sai" });
+
+            if (!Enum.TryParse<OrderStatus>(req.NewStatus, true, out var statusEnum))
+                return BadRequest(new { message = "Trạng thái sai" });
+
+            // Logic nhận đơn của Shipper
             if (order.Status == OrderStatus.Confirmed && statusEnum == OrderStatus.Shipping)
             {
-                if (order.ShipperId != null && order.ShipperId != req.ShipperId) return BadRequest(new { message = "Đơn này đã có người khác nhận!" });
+                if (order.ShipperId != null && order.ShipperId != req.ShipperId)
+                    return BadRequest(new { message = "Đơn này đã có người khác nhận!" });
                 order.ShipperId = req.ShipperId;
             }
+
+            // --- LOGIC HOÀN KHO KHI HỦY ĐƠN (MỚI) ---
+            // Nếu chuyển sang trạng thái "Cancelled" (Hủy) VÀ trạng thái cũ chưa phải là Hủy
+            if (statusEnum == OrderStatus.Cancelled && order.Status != OrderStatus.Cancelled)
+            {
+                foreach (var detail in order.OrderDetails)
+                {
+                    var product = await _context.Products.FindAsync(detail.ProductId);
+                    if (product != null)
+                    {
+                        // Cộng lại số lượng vào kho
+                        product.StockQuantity += detail.Quantity;
+                    }
+                }
+            }
+            // ----------------------------------------------
+
             order.Status = statusEnum;
             await _context.SaveChangesAsync();
             return Ok(new { success = true });
         }
-        // 6. [SHIPPER] THỐNG KÊ HIỆU SUẤT GIAO HÀNG
+
+        // ==========================================
+        // 6. THỐNG KÊ HIỆU SUẤT SHIPPER
+        // ==========================================
         [HttpGet("shipper-stats")]
         public async Task<IActionResult> GetShipperStats(int shipperId)
         {
-            // Lấy tất cả đơn hàng đã kết thúc của Shipper này
             var orders = await _context.Orders
                 .Where(o => o.ShipperId == shipperId &&
                            (o.Status == OrderStatus.Completed || o.Status == OrderStatus.Cancelled))
                 .Select(o => new { o.OrderDate, o.Status })
                 .ToListAsync();
 
-            // Group theo Tháng/Năm (Xử lý trên Ram để tránh lỗi SQL version cũ)
             var stats = orders
                 .GroupBy(o => new { o.OrderDate.Month, o.OrderDate.Year })
                 .Select(g => new
@@ -223,22 +253,19 @@ namespace HairCareShop.Web.Controllers.Api
                     successCount = g.Count(x => x.Status == OrderStatus.Completed),
                     failedCount = g.Count(x => x.Status == OrderStatus.Cancelled)
                 })
-                .OrderByDescending(x => x.month) // Tháng mới nhất lên đầu
+                .OrderByDescending(x => x.month)
                 .ToList();
 
             return Ok(stats);
         }
     }
 
-    // --- CÁC CLASS DTO (Dữ liệu truyền lên) ---
+    // --- DTO CLASSES ---
     public class CreateOrderRequest
     {
         public int UserId { get; set; }
         public string Address { get; set; } = string.Empty;
-
-        // Cần trường này để nhận SĐT từ App
         public string Phone { get; set; } = string.Empty;
-
         public string PaymentMethod { get; set; } = "COD";
         public List<CartItemDTO> Items { get; set; } = new();
     }

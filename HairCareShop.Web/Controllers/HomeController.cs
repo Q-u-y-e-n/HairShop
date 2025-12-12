@@ -1,9 +1,10 @@
 using HairCareShop.Core.Entities;
 using HairCareShop.Data.EF;
 using HairCareShop.Core.Enums;
-using HairCareShop.Web.ViewModels; // Đảm bảo bạn đã tạo file ViewModel ở bước trước
+using HairCareShop.Web.ViewModels; // Đảm bảo đã có file DashboardViewModel.cs trong thư mục ViewModels
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace HairCareShop.Web.Controllers
 {
@@ -16,73 +17,78 @@ namespace HairCareShop.Web.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        // Action duy nhất cho Dashboard (nhận tham số lọc tháng/năm)
+        public async Task<IActionResult> Index(int? month, int? year)
         {
-            var today = DateTime.Today;
-            var startOfMonth = new DateTime(today.Year, today.Month, 1);
+            // 1. Xác định thời gian lọc (Mặc định là tháng hiện tại nếu không chọn)
+            int filterMonth = month ?? DateTime.Now.Month;
+            int filterYear = year ?? DateTime.Now.Year;
 
-            // ==========================================
-            // 1. TÍNH CÁC CON SỐ TỔNG QUAN (CARDS)
-            // ==========================================
+            var startDate = new DateTime(filterYear, filterMonth, 1);
+            var endDate = startDate.AddMonths(1).AddSeconds(-1); // Thời điểm cuối cùng của tháng
 
-            // Doanh thu hôm nay (Chỉ tính đơn đã hoàn thành)
-            var dailyRevenue = await _context.Orders
-                .Where(o => o.OrderDate.Date == today && o.Status == OrderStatus.Completed)
-                .SumAsync(o => o.TotalAmount);
-
-            // Doanh thu tháng này
-            var monthlyRevenue = await _context.Orders
-                .Where(o => o.OrderDate >= startOfMonth && o.Status == OrderStatus.Completed)
-                .SumAsync(o => o.TotalAmount);
-
-            // Số đơn hàng mới hôm nay (Tất cả trạng thái)
-            var newOrders = await _context.Orders
-                .CountAsync(o => o.OrderDate.Date == today);
-
-            // Tổng số sản phẩm đang có
-            var totalProducts = await _context.Products.CountAsync();
-
-
-            // ==========================================
-            // 2. DỮ LIỆU BIỂU ĐỒ DOANH THU (6 THÁNG GẦN NHẤT)
-            // ==========================================
-            var revenueData = new List<decimal>();
-            var monthLabels = new List<string>();
-
-            for (int i = 5; i >= 0; i--)
-            {
-                var date = today.AddMonths(-i);
-                var start = new DateTime(date.Year, date.Month, 1);
-                var end = start.AddMonths(1).AddSeconds(-1);
-
-                var rev = await _context.Orders
-                    .Where(o => o.OrderDate >= start && o.OrderDate <= end && o.Status == OrderStatus.Completed)
-                    .SumAsync(o => o.TotalAmount);
-
-                revenueData.Add(rev);
-                monthLabels.Add($"T{date.Month}/{date.Year}");
-            }
-
-
-            // ==========================================
-            // 3. DỮ LIỆU BIỂU ĐỒ TRÒN (TRẠNG THÁI ĐƠN)
-            // ==========================================
-            var statusCounts = await _context.Orders
-                .GroupBy(o => o.Status)
-                .Select(g => new { Status = g.Key, Count = g.Count() })
+            // 2. Lấy danh sách đơn hàng trong khoảng thời gian này
+            // (Chỉ lấy những cột cần thiết để tối ưu, hoặc lấy hết nếu cần)
+            var monthOrders = await _context.Orders
+                .Where(o => o.OrderDate >= startDate && o.OrderDate <= endDate)
                 .ToListAsync();
 
+            // ==========================================
+            // 3. TÍNH TOÁN CÁC CON SỐ TỔNG QUAN (CARDS)
+            // ==========================================
+
+            // Tổng doanh thu (Chỉ tính đơn đã hoàn thành)
+            var monthlyRevenue = monthOrders
+                .Where(o => o.Status == OrderStatus.Completed)
+                .Sum(o => o.TotalAmount);
+
+            var totalOrders = monthOrders.Count;
+            var successfulOrders = monthOrders.Count(o => o.Status == OrderStatus.Completed);
+            var cancelledOrders = monthOrders.Count(o => o.Status == OrderStatus.Cancelled);
 
             // ==========================================
-            // 4. TOP 5 SẢN PHẨM BÁN CHẠY NHẤT
+            // 4. DỮ LIỆU BIỂU ĐỒ (DOANH THU TỪNG NGÀY)
             // ==========================================
+            var chartLabels = new List<string>();
+            var chartData = new List<decimal>();
+
+            int daysInMonth = DateTime.DaysInMonth(filterYear, filterMonth);
+
+            // Chạy vòng lặp từ ngày 1 đến hết tháng
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                var currentDay = new DateTime(filterYear, filterMonth, day);
+
+                // Tính tổng tiền của ngày hôm đó (đơn Completed)
+                var dailyRev = monthOrders
+                    .Where(o => o.OrderDate.Date == currentDay.Date && o.Status == OrderStatus.Completed)
+                    .Sum(o => o.TotalAmount);
+
+                chartLabels.Add($"{day:00}/{filterMonth:00}"); // Label: 01/12
+                chartData.Add(dailyRev);
+            }
+
+            // ==========================================
+            // 5. BIỂU ĐỒ TRÒN (TỶ LỆ TRẠNG THÁI)
+            // ==========================================
+            var pendingCount = monthOrders.Count(o => o.Status == OrderStatus.Pending);
+            var shippingCount = monthOrders.Count(o => o.Status == OrderStatus.Shipping);
+            var completedCount = monthOrders.Count(o => o.Status == OrderStatus.Completed);
+            var cancelledCount = monthOrders.Count(o => o.Status == OrderStatus.Cancelled);
+
+            // ==========================================
+            // 6. TOP 5 SẢN PHẨM BÁN CHẠY (TRONG THÁNG ĐÓ)
+            // ==========================================
+            // Cần query riêng vào bảng OrderDetail vì list monthOrders ở trên chưa include chi tiết
             var topProducts = await _context.OrderDetails
                 .Include(od => od.Product)
+                .Include(od => od.Order)
+                .Where(od => od.Order.OrderDate >= startDate && od.Order.OrderDate <= endDate
+                             && od.Order.Status == OrderStatus.Completed) // Chỉ tính đơn thành công
                 .GroupBy(od => od.ProductId)
                 .Select(g => new TopProductDto
                 {
                     ProductName = g.First().Product.Name,
-                    // Nếu ảnh null thì để trống, View sẽ xử lý ảnh mặc định
                     ImageUrl = g.First().Product.ImageUrl ?? "",
                     SoldQuantity = g.Sum(x => x.Quantity),
                     TotalRevenue = g.Sum(x => x.Quantity * x.UnitPrice)
@@ -91,30 +97,35 @@ namespace HairCareShop.Web.Controllers
                 .Take(5)
                 .ToListAsync();
 
-
             // ==========================================
-            // 5. ĐÓNG GÓI DỮ LIỆU VÀO VIEWMODEL
+            // 7. ĐÓNG GÓI VÀO VIEWMODEL
             // ==========================================
             var model = new DashboardViewModel
             {
-                DailyRevenue = dailyRevenue,
+                // Thông tin bộ lọc để hiển thị lại trên View
+                SelectedMonth = filterMonth,
+                SelectedYear = filterYear,
+
+                // Số liệu tổng quan
                 MonthlyRevenue = monthlyRevenue,
-                NewOrdersToday = newOrders,
-                TotalProducts = totalProducts,
+                TotalOrders = totalOrders,
+                SuccessfulOrders = successfulOrders,
+                CancelledOrders = cancelledOrders,
 
-                RevenueLast12Months = revenueData,
-                MonthLabels = monthLabels,
+                // Dữ liệu biểu đồ
+                ChartLabels = chartLabels,
+                ChartData = chartData,
 
-                // Lấy số lượng từng trạng thái (nếu không có thì trả về 0)
-                PendingCount = statusCounts.FirstOrDefault(x => x.Status == OrderStatus.Pending)?.Count ?? 0,
-                ShippingCount = statusCounts.FirstOrDefault(x => x.Status == OrderStatus.Shipping)?.Count ?? 0,
-                CompletedCount = statusCounts.FirstOrDefault(x => x.Status == OrderStatus.Completed)?.Count ?? 0,
-                CancelledCount = statusCounts.FirstOrDefault(x => x.Status == OrderStatus.Cancelled)?.Count ?? 0,
+                // Dữ liệu trạng thái
+                PendingCount = pendingCount,
+                ShippingCount = shippingCount,
+                CompletedCount = completedCount,
+                CancelledCount = cancelledCount,
 
+                // Top sản phẩm
                 TopSellingProducts = topProducts
             };
 
-            // Trả về View cùng với Model dữ liệu
             return View(model);
         }
     }

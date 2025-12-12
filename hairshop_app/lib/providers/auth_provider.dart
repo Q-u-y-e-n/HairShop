@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import '../models/user_model.dart'; // Đảm bảo đúng tên file model của bạn (user.dart hoặc user_model.dart)
+import '../models/user_model.dart'; // Đảm bảo import đúng file Model User của bạn
 import '../services/api_service.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _user;
-  final ApiService _apiService =
-      ApiService(); // Khởi tạo ApiService để gọi mạng
+  final ApiService _apiService = ApiService();
 
   User? get user => _user;
 
-  // 1. SET USER (Dùng khi Login thành công)
+  // 1. SET USER (Khi đăng nhập)
   void setUser(Map<String, dynamic> data) {
     _user = User.fromJson(data);
     notifyListeners();
@@ -21,7 +20,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // 3. CẬP NHẬT THÔNG TIN (Vừa gọi API, vừa cập nhật RAM)
+  // 3. CẬP NHẬT THÔNG TIN (Logic quan trọng đã sửa)
   Future<bool> updateUserInfo(
     String fullName,
     String phone,
@@ -38,33 +37,36 @@ class AuthProvider with ChangeNotifier {
     );
 
     if (success) {
-      // B. Nếu thành công -> Cập nhật lại User trong bộ nhớ App
-      // Vì các field là final, ta tạo object mới đè lên object cũ
+      // B. CẬP NHẬT NGAY LẬP TỨC VÀO BỘ NHỚ (RAM)
+      // Tạo một User mới copy từ User cũ nhưng thay đổi thông tin mới
       _user = User(
         id: _user!.id,
         email: _user!.email,
         role: _user!.role,
-        fullName: fullName, // Dữ liệu mới
-        phone: phone, // Dữ liệu mới
-        address: address, // Dữ liệu mới
+        avatarUrl: _user!.avatarUrl, // Giữ nguyên avatar
+
+        fullName: fullName, // Mới
+        phone: phone, // Mới
+        address: address, // Mới (Với Shipper là khu vực hoạt động)
       );
 
-      notifyListeners(); // Báo cho UI vẽ lại
+      // C. Báo cho giao diện vẽ lại
+      notifyListeners();
       return true;
     }
 
     return false;
   }
 
-  // HÀM GỌI TỪ UI ĐỂ UPLOAD
+  // 4. CẬP NHẬT AVATAR
   Future<bool> updateAvatar(String filePath) async {
     if (_user == null) return false;
 
-    // 1. Gọi API upload
+    // Gọi API upload
     String? newUrl = await _apiService.uploadAvatar(_user!.id, filePath);
 
     if (newUrl != null) {
-      // 2. Cập nhật User trong bộ nhớ
+      // Cập nhật URL ảnh mới vào bộ nhớ
       _user = User(
         id: _user!.id,
         email: _user!.email,
@@ -72,7 +74,7 @@ class AuthProvider with ChangeNotifier {
         role: _user!.role,
         phone: _user!.phone,
         address: _user!.address,
-        avatarUrl: newUrl, // <--- CẬP NHẬT URL MỚI
+        avatarUrl: newUrl, // <-- URL Mới từ Server
       );
       notifyListeners();
       return true;

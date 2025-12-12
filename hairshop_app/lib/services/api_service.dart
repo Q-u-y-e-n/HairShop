@@ -2,16 +2,17 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Đổi port 5194 thành port thực tế của bạn
-  static const String baseUrl = "http://192.168.90.5:5194/api";
+  // ⚠️ LƯU Ý: Thay đổi IP này theo máy tính của bạn (dùng ipconfig để kiểm tra)
+  static const String baseUrl = "http://10.217.149.80:5194/api";
 
-  // 1. Đăng nhập
+  // ========================================================================
+  // 1. NHÓM AUTHENTICATION (Đăng nhập, Đăng ký, Profile)
+  // ========================================================================
+
+  // Đăng nhập
   Future<Map<String, dynamic>> login(String email, String password) async {
-    print("---------------------------------");
-    print("Đang gọi API login...");
+    print("--- LOGIN: $email ---");
     final url = '$baseUrl/AuthApi/login';
-    print("URL: $url");
-    print("Data: $email / $password");
 
     try {
       final response = await http.post(
@@ -20,42 +21,24 @@ class ApiService {
         body: jsonEncode({"email": email, "password": password}),
       );
 
-      print("STATUS CODE: ${response.statusCode}"); // <--- Quan trọng
-      print("RESPONSE BODY: ${response.body}"); // <--- Quan trọng
+      print("Status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        // Ném ra lỗi cụ thể để UI hiển thị
-        throw Exception('Lỗi ${response.statusCode}: ${response.body}');
+        throw Exception('Lỗi đăng nhập: ${response.body}');
       }
     } catch (e) {
-      print("LỖI KẾT NỐI LOGIN: $e");
+      print("Lỗi kết nối Login: $e");
       throw e;
     }
   }
 
-  // 2. Lấy đơn hàng của Shipper
-  Future<List<dynamic>> getShipperOrders(int shipperId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/ShipperApi/my-orders?shipperId=$shipperId'),
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    throw Exception('Lỗi tải đơn hàng');
-  }
-
-  // Trong class ApiService
-  // Đăng ký khách hàng
   // Đăng ký
   Future<bool> register(String name, String email, String password) async {
-    print("Đang gọi API Đăng ký..."); // <--- Thêm dòng này để debug
-    print("URL: $baseUrl/AuthApi/register"); // <--- Kiểm tra URL
-
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/AuthApi/register'), // <--- Phải là /register
+        Uri.parse('$baseUrl/AuthApi/register'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "fullName": name,
@@ -63,15 +46,69 @@ class ApiService {
           "password": password,
         }),
       );
-
-      print("Status Code: ${response.statusCode}"); // <--- Xem server trả về gì
-      print("Body: ${response.body}");
-
       return response.statusCode == 200;
     } catch (e) {
-      print("LỖI KẾT NỐI ĐĂNG KÝ: $e"); // <--- Xem lỗi cụ thể
-      throw e;
+      print("Lỗi đăng ký: $e");
+      return false;
     }
+  }
+
+  // CẬP NHẬT THÔNG TIN (Dùng chung cho cả Khách hàng và Shipper)
+  // - Đối với Shipper: biến 'address' sẽ đóng vai trò là "Khu vực hoạt động"
+  Future<bool> updateProfile(
+    int userId,
+    String fullName,
+    String phone,
+    String address,
+  ) async {
+    final url = Uri.parse('$baseUrl/AuthApi/update-profile');
+
+    // Body JSON này phải khớp với UpdateProfileRequest trong C#
+    final body = jsonEncode({
+      "userId": userId,
+      "fullName": fullName,
+      "phone": phone,
+      "address": address,
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Lỗi update: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Exception updateProfile: $e");
+      return false;
+    }
+  }
+
+  // Upload Avatar
+  Future<String?> uploadAvatar(int userId, String filePath) async {
+    var uri = Uri.parse('$baseUrl/AuthApi/upload-avatar?userId=$userId');
+    var request = http.MultipartRequest('POST', uri);
+
+    request.files.add(await http.MultipartFile.fromPath('file', filePath));
+
+    try {
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        var json = jsonDecode(response.body);
+        return json['avatarUrl']; // Trả về link ảnh mới
+      }
+    } catch (e) {
+      print("Lỗi upload avatar: $e");
+    }
+    return null;
   }
 
   // Nâng cấp lên Shipper
@@ -87,25 +124,15 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body); // Trả về User mới với Role Shipper
+      return jsonDecode(response.body);
     } else {
       throw Exception('Lỗi nâng cấp tài khoản');
     }
   }
 
-  // 5. Lấy lịch sử mua hàng (Dành cho Customer)
-  Future<List<dynamic>> getHistory(int userId) async {
-    // Gọi API: GET /api/OrderApi/history/{userId}
-    final response = await http.get(
-      Uri.parse('$baseUrl/OrderApi/history/$userId'),
-    );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Lỗi tải lịch sử đơn hàng: ${response.statusCode}');
-    }
-  }
+  // ========================================================================
+  // 2. NHÓM SẢN PHẨM (PRODUCT)
+  // ========================================================================
 
   Future<List<dynamic>> getProducts({String? search, int? categoryId}) async {
     String queryString = "";
@@ -114,81 +141,28 @@ class ApiService {
       queryString += "categoryId=$categoryId";
 
     final url = '$baseUrl/ProductApi?$queryString';
-
-    // --- THÊM LOG ĐỂ DEBUG ---
-    print("--------------------------");
-    print("Đang gọi API: $url");
-
     try {
       final response = await http.get(Uri.parse(url));
-
-      print("Status Code: ${response.statusCode}"); // <--- Quan trọng
-      print("Body: ${response.body}"); // <--- Quan trọng
-
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
-      } else {
-        throw Exception(
-          'Lỗi Server (${response.statusCode}): ${response.body}',
-        );
       }
+      return [];
     } catch (e) {
-      print("LỖI KẾT NỐI SP: $e");
-      throw Exception('Lỗi kết nối: $e');
+      print("Lỗi tải sản phẩm: $e");
+      return [];
     }
   }
-  // Thêm vào class ApiService
 
-  // 1. Gửi đơn hàng (Checkout)
+  // ========================================================================
+  // 3. NHÓM GIỎ HÀNG (CART)
+  // ========================================================================
 
-  // 2. Lấy chi tiết đơn hàng
-  Future<Map<String, dynamic>> getOrderDetail(int orderId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/OrderApi/detail/$orderId'),
-    );
-    if (response.statusCode == 200) return jsonDecode(response.body);
-    throw Exception('Lỗi tải chi tiết đơn hàng');
-  }
-
-  // 3. Gửi đánh giá (Multipart File)
-  Future<bool> submitReview(
-    int userId,
-    int productId,
-    int orderId,
-    int rating,
-    String comment,
-    String? imagePath,
-  ) async {
-    var request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/ReviewApi/add'),
-    );
-
-    request.fields['UserId'] = userId.toString();
-    request.fields['ProductId'] = productId.toString();
-    request.fields['OrderId'] = orderId.toString();
-    request.fields['Rating'] = rating.toString();
-    request.fields['Comment'] = comment;
-
-    if (imagePath != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath('ImageFile', imagePath),
-      );
-    }
-
-    var response = await request.send();
-    return response.statusCode == 200;
-  }
-
-  // Trong class ApiService
-  // Lấy giỏ hàng từ Server
   Future<List<dynamic>> getCart(int userId) async {
     final response = await http.get(Uri.parse('$baseUrl/CartApi/$userId'));
     if (response.statusCode == 200) return jsonDecode(response.body);
     return [];
   }
 
-  // Đồng bộ thêm vào giỏ
   Future<void> addToCart(int userId, int productId, int quantity) async {
     await http.post(
       Uri.parse('$baseUrl/CartApi/add'),
@@ -201,7 +175,6 @@ class ApiService {
     );
   }
 
-  // Giảm số lượng
   Future<void> decreaseCartItem(int userId, int productId) async {
     await http.post(
       Uri.parse('$baseUrl/CartApi/decrease'),
@@ -214,52 +187,17 @@ class ApiService {
     );
   }
 
-  // Xóa khỏi giỏ
   Future<void> removeCartItem(int userId, int productId) async {
     await http.delete(
       Uri.parse('$baseUrl/CartApi/remove?userId=$userId&productId=$productId'),
     );
   }
 
-  // [SHIPPER] Lấy danh sách (Thêm tham số shipperId)
-  Future<List<dynamic>> getOrdersByStatus(String status, int shipperId) async {
-    // Gọi API kèm theo shipperId
-    final response = await http.get(
-      Uri.parse('$baseUrl/OrderApi/list?status=$status&shipperId=$shipperId'),
-    );
-    if (response.statusCode == 200) return jsonDecode(response.body);
-    return [];
-  }
+  // ========================================================================
+  // 4. NHÓM ĐƠN HÀNG (ORDER - CUSTOMER)
+  // ========================================================================
 
-  // [SHIPPER] Cập nhật trạng thái (Thêm tham số shipperId)
-  Future<bool> updateOrderStatus(
-    int orderId,
-    String newStatus,
-    int shipperId,
-  ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/OrderApi/update-status'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "orderId": orderId,
-        "newStatus": newStatus,
-        "shipperId": shipperId, // Gửi ID shipper lên
-      }),
-    );
-    return response.statusCode == 200;
-  }
-
-  // Lấy danh sách đánh giá của 1 sản phẩm
-  Future<List<dynamic>> getProductReviews(int productId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/ReviewApi/product/$productId'),
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    return [];
-  }
-
+  // Tạo đơn hàng (Checkout)
   Future<bool> createOrder(
     int userId,
     String address,
@@ -271,7 +209,7 @@ class ApiService {
     final body = jsonEncode({
       "userId": userId,
       "address": address,
-      "phone": phone, // <--- Gửi SĐT lên
+      "phone": phone, // Quan trọng: Gửi SĐT khách nhập
       "paymentMethod": paymentMethod,
       "items": items
           .map(
@@ -292,63 +230,60 @@ class ApiService {
       );
       return response.statusCode == 200;
     } catch (e) {
-      print("Lỗi createOrder: $e");
       return false;
     }
   }
-  // ... (Các hàm cũ giữ nguyên)
 
-  // CẬP NHẬT THÔNG TIN CÁ NHÂN
-  Future<bool> updateProfile(
-    int userId,
-    String fullName,
-    String phone,
-    String address,
+  // Lấy lịch sử mua hàng
+  Future<List<dynamic>> getHistory(int userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/OrderApi/history/$userId'),
+    );
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    return [];
+  }
+
+  // Lấy chi tiết đơn hàng
+  Future<Map<String, dynamic>> getOrderDetail(int orderId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/OrderApi/detail/$orderId'),
+    );
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception('Lỗi tải chi tiết đơn');
+  }
+
+  // ========================================================================
+  // 5. NHÓM SHIPPER (Giao hàng)
+  // ========================================================================
+
+  // Lấy danh sách đơn theo trạng thái (Cần lấy / Đang giao)
+  Future<List<dynamic>> getOrdersByStatus(String status, int shipperId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/OrderApi/list?status=$status&shipperId=$shipperId'),
+    );
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    return [];
+  }
+
+  // Cập nhật trạng thái (Nhận đơn / Giao thành công / Hủy)
+  Future<bool> updateOrderStatus(
+    int orderId,
+    String newStatus,
+    int shipperId,
   ) async {
-    final url = Uri.parse('$baseUrl/AuthApi/update-profile');
-    final body = jsonEncode({
-      "userId": userId,
-      "fullName": fullName,
-      "phone": phone,
-      "address": address,
-    });
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: body,
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      print("Lỗi updateProfile: $e");
-      return false;
-    }
+    final response = await http.post(
+      Uri.parse('$baseUrl/OrderApi/update-status'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "orderId": orderId,
+        "newStatus": newStatus,
+        "shipperId": shipperId,
+      }),
+    );
+    return response.statusCode == 200;
   }
 
-  // HÀM UPLOAD ẢNH
-  Future<String?> uploadAvatar(int userId, String filePath) async {
-    var uri = Uri.parse('$baseUrl/AuthApi/upload-avatar?userId=$userId');
-    var request = http.MultipartRequest('POST', uri);
-
-    // Đính kèm file
-    request.files.add(await http.MultipartFile.fromPath('file', filePath));
-
-    try {
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        var json = jsonDecode(response.body);
-        return json['avatarUrl']; // Trả về link ảnh mới từ Server
-      }
-    } catch (e) {
-      print("Lỗi upload: $e");
-    }
-    return null;
-  }
-
-  // THỐNG KÊ SHIPPER
+  // Thống kê hiệu suất Shipper
   Future<List<dynamic>> getShipperStats(int shipperId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/OrderApi/shipper-stats?shipperId=$shipperId'),
@@ -357,5 +292,45 @@ class ApiService {
       return jsonDecode(response.body);
     }
     return [];
+  }
+
+  // ========================================================================
+  // 6. NHÓM ĐÁNH GIÁ (REVIEW)
+  // ========================================================================
+
+  Future<List<dynamic>> getProductReviews(int productId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/ReviewApi/product/$productId'),
+    );
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    return [];
+  }
+
+  Future<bool> submitReview(
+    int userId,
+    int productId,
+    int orderId,
+    int rating,
+    String comment,
+    String? imagePath,
+  ) async {
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/ReviewApi/add'),
+    );
+    request.fields['UserId'] = userId.toString();
+    request.fields['ProductId'] = productId.toString();
+    request.fields['OrderId'] = orderId.toString();
+    request.fields['Rating'] = rating.toString();
+    request.fields['Comment'] = comment;
+
+    if (imagePath != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('ImageFile', imagePath),
+      );
+    }
+
+    var response = await request.send();
+    return response.statusCode == 200;
   }
 }

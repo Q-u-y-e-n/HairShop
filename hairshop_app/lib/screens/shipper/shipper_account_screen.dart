@@ -17,13 +17,19 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
   List<dynamic> _stats = [];
   bool _isLoadingStats = true;
 
+  // --- CẤU HÌNH MÀU SẮC (MÀU HỒNG CHUYÊN NGHIỆP) ---
+  final Color _primaryColor = Colors.pink;
+  final Color _darkPink = Colors.pink.shade700;
+  final Color _lightPink = Colors.pink.shade400;
+  final Color _bgPink = Colors.pink.shade50;
+
   @override
   void initState() {
     super.initState();
     _loadStats();
   }
 
-  // Hàm tải thống kê (có thể gọi lại khi kéo xuống)
+  // Tải thống kê từ API
   Future<void> _loadStats() async {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user == null) return;
@@ -39,6 +45,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
     }
   }
 
+  // Xử lý Đăng xuất
   void _handleLogout() {
     showDialog(
       context: context,
@@ -46,7 +53,10 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
         title: Text("Đăng xuất"),
         content: Text("Bạn muốn thoát tài khoản?"),
         actions: [
-          TextButton(child: Text("Hủy"), onPressed: () => Navigator.pop(ctx)),
+          TextButton(
+            child: Text("Hủy", style: TextStyle(color: Colors.grey)),
+            onPressed: () => Navigator.pop(ctx),
+          ),
           TextButton(
             child: Text("Thoát", style: TextStyle(color: Colors.red)),
             onPressed: () {
@@ -62,6 +72,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
     );
   }
 
+  // Xử lý chọn ảnh
   void _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -84,6 +95,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
     }
   }
 
+  // Hiển thị Dialog sửa thông tin
   void _showEditDialog() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
@@ -111,26 +123,26 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                   controller: nameCtrl,
                   decoration: InputDecoration(
                     labelText: "Họ tên",
-                    prefixIcon: Icon(Icons.person),
+                    prefixIcon: Icon(Icons.person, color: _primaryColor),
                     border: OutlineInputBorder(),
                   ),
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 15),
                 TextField(
                   controller: phoneCtrl,
                   decoration: InputDecoration(
                     labelText: "SĐT",
-                    prefixIcon: Icon(Icons.phone),
+                    prefixIcon: Icon(Icons.phone, color: _primaryColor),
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.phone,
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 15),
                 TextField(
                   controller: addressCtrl,
                   decoration: InputDecoration(
                     labelText: "Khu vực hoạt động",
-                    prefixIcon: Icon(Icons.map),
+                    prefixIcon: Icon(Icons.map, color: _primaryColor),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -143,23 +155,34 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
               onPressed: () => Navigator.pop(ctx),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              style: ElevatedButton.styleFrom(backgroundColor: _primaryColor),
               onPressed: isSaving
                   ? null
                   : () async {
                       setStateDialog(() => isSaving = true);
+
+                      // --- GỌI PROVIDER ĐỂ CẬP NHẬT ---
                       bool success = await auth.updateUserInfo(
                         nameCtrl.text,
                         phoneCtrl.text,
                         addressCtrl.text,
                       );
+
                       setStateDialog(() => isSaving = false);
+
                       if (success) {
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text("Đã lưu thay đổi"),
                             backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Lỗi cập nhật"),
+                            backgroundColor: Colors.red,
                           ),
                         );
                       }
@@ -189,33 +212,36 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
       backgroundColor: Colors.grey[50],
       body: RefreshIndicator(
         onRefresh: _loadStats,
-        color: Colors.orange,
+        color: _primaryColor,
         child: SingleChildScrollView(
-          physics:
-              AlwaysScrollableScrollPhysics(), // Cho phép kéo ngay cả khi nội dung ngắn
+          physics: AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              // ================= 1. HEADER PROFILE CAO CẤP =================
+              // ================= 1. HEADER PROFILE (GRADIENT HỒNG) =================
               Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.center,
                 children: [
                   // Nền Gradient
                   Container(
-                    height: 220,
+                    height: 240,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          Colors.orange.shade800,
-                          Colors.orange.shade400,
-                        ],
+                        colors: [_darkPink, _lightPink],
                         begin: Alignment.bottomLeft,
                         end: Alignment.topRight,
                       ),
                       borderRadius: BorderRadius.vertical(
                         bottom: Radius.circular(30),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _primaryColor.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -224,12 +250,12 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                     top: 60,
                     child: Column(
                       children: [
-                        // Avatar
+                        // Avatar + Nút Camera
                         Stack(
                           children: [
                             Container(
-                              width: 100,
-                              height: 100,
+                              width: 110,
+                              height: 110,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -244,7 +270,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                                 ],
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(50),
+                                borderRadius: BorderRadius.circular(60),
                                 child: _buildAvatar(
                                   user?.avatarUrl,
                                   user?.fullName,
@@ -270,7 +296,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                                   ),
                                   child: Icon(
                                     Icons.camera_alt,
-                                    color: Colors.orange[800],
+                                    color: _darkPink,
                                     size: 20,
                                   ),
                                 ),
@@ -282,14 +308,17 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                         Text(
                           user?.fullName ?? "Shipper",
                           style: TextStyle(
-                            fontSize: 22,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
                         Text(
                           user?.email ?? "",
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -299,17 +328,17 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
 
               SizedBox(height: 20),
 
-              // ================= 2. CARD THÔNG TIN CÁ NHÂN =================
+              // ================= 2. CARD THÔNG TIN (Màu hồng nhẹ) =================
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Card(
                   elevation: 4,
-                  shadowColor: Colors.black12,
+                  shadowColor: Colors.pink.withOpacity(0.2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Padding(
-                    padding: EdgeInsets.all(15),
+                    padding: EdgeInsets.all(20),
                     child: Column(
                       children: [
                         _buildInfoRow(
@@ -317,24 +346,25 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                           "Số điện thoại",
                           user?.phone ?? "Chưa cập nhật",
                         ),
-                        Divider(height: 20),
+                        Divider(height: 25, color: Colors.grey[200]),
                         _buildInfoRow(
                           Icons.map,
                           "Khu vực hoạt động",
                           user?.address ?? "Chưa cập nhật",
                         ),
-                        SizedBox(height: 15),
+                        SizedBox(height: 20),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             icon: Icon(Icons.edit, size: 18),
                             label: Text("Chỉnh sửa thông tin"),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.orange,
-                              side: BorderSide(color: Colors.orange),
+                              foregroundColor: _primaryColor,
+                              side: BorderSide(color: _primaryColor),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                               ),
+                              padding: EdgeInsets.symmetric(vertical: 12),
                             ),
                             onPressed: _showEditDialog,
                           ),
@@ -345,14 +375,14 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                 ),
               ),
 
-              SizedBox(height: 20),
+              SizedBox(height: 25),
 
-              // ================= 3. THỐNG KÊ HIỆU SUẤT (DASHBOARD) =================
+              // ================= 3. THỐNG KÊ HIỆU SUẤT =================
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
-                    Icon(Icons.bar_chart, color: Colors.orange[800]),
+                    Icon(Icons.bar_chart, color: _darkPink),
                     SizedBox(width: 10),
                     Text(
                       "Hiệu suất giao hàng",
@@ -365,12 +395,12 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 15),
 
               if (_isLoadingStats)
                 Padding(
                   padding: EdgeInsets.all(20),
-                  child: CircularProgressIndicator(color: Colors.orange),
+                  child: CircularProgressIndicator(color: _primaryColor),
                 )
               else if (_stats.isEmpty)
                 Container(
@@ -399,9 +429,8 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
               else
                 ListView.builder(
                   padding: EdgeInsets.symmetric(horizontal: 20),
-                  shrinkWrap: true, // Để nằm trong SingleScrollView
-                  physics:
-                      NeverScrollableScrollPhysics(), // Tắt scroll của list con
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
                   itemCount: _stats.length,
                   itemBuilder: (ctx, i) => _buildStatCard(_stats[i]),
                 ),
@@ -443,41 +472,44 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
     );
   }
 
-  // --- WIDGET CON: Dòng thông tin ---
+  // Helper: Dòng thông tin
   Widget _buildInfoRow(IconData icon, String title, String value) {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(10),
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.orange.shade50,
-            borderRadius: BorderRadius.circular(10),
+            color: _bgPink,
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: Colors.orange, size: 20),
+          child: Icon(icon, color: _primaryColor, size: 22),
         ),
         SizedBox(width: 15),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
-            ),
-          ],
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  // --- WIDGET CON: Thẻ thống kê (Dashboard Card) ---
+  // Helper: Thẻ thống kê
   Widget _buildStatCard(dynamic item) {
     return Container(
       margin: EdgeInsets.only(bottom: 15),
@@ -503,7 +535,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.black87,
+                  color: _darkPink,
                 ),
               ),
               Container(
@@ -513,7 +545,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  "Đã hoàn tất",
+                  "Đã kết sổ",
                   style: TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ),
@@ -522,7 +554,6 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
           SizedBox(height: 15),
           Row(
             children: [
-              // Cột Thành công
               Expanded(
                 child: Container(
                   padding: EdgeInsets.all(10),
@@ -537,7 +568,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                         style: TextStyle(
                           color: Colors.green[700],
                           fontWeight: FontWeight.bold,
-                          fontSize: 24,
+                          fontSize: 22,
                         ),
                       ),
                       Text(
@@ -552,7 +583,6 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                 ),
               ),
               SizedBox(width: 10),
-              // Cột Thất bại
               Expanded(
                 child: Container(
                   padding: EdgeInsets.all(10),
@@ -567,7 +597,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
                         style: TextStyle(
                           color: Colors.red[700],
                           fontWeight: FontWeight.bold,
-                          fontSize: 24,
+                          fontSize: 22,
                         ),
                       ),
                       Text(
@@ -585,7 +615,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
     );
   }
 
-  // --- WIDGET CON: Hiển thị Avatar ---
+  // Helper: Avatar
   Widget _buildAvatar(String? url, String? name) {
     String domain = ApiService.baseUrl.replaceAll("/api", "");
     if (url != null && url.isNotEmpty) {
@@ -599,7 +629,7 @@ class _ShipperAccountScreenState extends State<ShipperAccountScreen> {
     return Center(
       child: Text(
         name != null && name.isNotEmpty ? name[0].toUpperCase() : "S",
-        style: TextStyle(fontSize: 40, color: Colors.orange),
+        style: TextStyle(fontSize: 40, color: _primaryColor),
       ),
     );
   }

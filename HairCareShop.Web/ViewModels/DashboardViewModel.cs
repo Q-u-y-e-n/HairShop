@@ -2,23 +2,28 @@ namespace HairCareShop.Web.ViewModels
 {
     public class DashboardViewModel
     {
-        // 1. Các con số tổng quan (Card)
-        public decimal DailyRevenue { get; set; }    // Doanh thu hôm nay
-        public decimal MonthlyRevenue { get; set; }  // Doanh thu tháng này
-        public int NewOrdersToday { get; set; }      // Đơn mới hôm nay
-        public int TotalProducts { get; set; }       // Tổng sản phẩm đang bán
+        // --- THÔNG TIN BỘ LỌC ---
+        public int SelectedMonth { get; set; }
+        public int SelectedYear { get; set; }
 
-        // 2. Dữ liệu cho Biểu đồ Doanh thu (12 tháng)
-        public List<decimal> RevenueLast12Months { get; set; } = new List<decimal>();
-        public List<string> MonthLabels { get; set; } = new List<string>();
+        // --- CÁC CON SỐ TỔNG QUAN (CỦA THÁNG ĐANG CHỌN) ---
+        public decimal MonthlyRevenue { get; set; }  // Tổng thu tháng này
+        public int TotalOrders { get; set; }         // Tổng đơn tháng này
+        public int SuccessfulOrders { get; set; }    // Đơn thành công tháng này
+        public int CancelledOrders { get; set; }     // Đơn hủy tháng này
 
-        // 3. Dữ liệu cho Biểu đồ Trạng thái đơn hàng (Pie Chart)
-        public int PendingCount { get; set; }   // Chờ xác nhận
-        public int ShippingCount { get; set; }  // Đang giao
-        public int CompletedCount { get; set; } // Thành công
-        public int CancelledCount { get; set; } // Đã hủy
+        // --- DỮ LIỆU BIỂU ĐỒ (THEO NGÀY TRONG THÁNG) ---
+        // Labels sẽ là: "01/12", "02/12", "03/12"...
+        public List<string> ChartLabels { get; set; } = new List<string>();
+        public List<decimal> ChartData { get; set; } = new List<decimal>();
 
-        // 4. Top sản phẩm bán chạy
+        // --- BIỂU ĐỒ TRÒN (TỶ LỆ TRẠNG THÁI) ---
+        public int PendingCount { get; set; }
+        public int ShippingCount { get; set; }
+        public int CompletedCount { get; set; }
+        public int CancelledCount { get; set; }
+
+        // --- TOP SẢN PHẨM ---
         public List<TopProductDto> TopSellingProducts { get; set; } = new List<TopProductDto>();
     }
 
@@ -27,6 +32,6 @@ namespace HairCareShop.Web.ViewModels
         public string ProductName { get; set; } = string.Empty;
         public int SoldQuantity { get; set; }
         public decimal TotalRevenue { get; set; }
-        public string ImageUrl { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
     }
 }
